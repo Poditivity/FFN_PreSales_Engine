@@ -1,0 +1,28 @@
+<!-- @dsCard group="Pipeline" height=360 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  return h('div', { className: 'demo', style: { maxWidth: '560px' } },
+    h(F.ActivityTimeline, { items: [
+      { title: 'Moved to SQL by Sujatha', meta: '17 Sep 2026, 15:42', tone: 'brand' },
+      { title: 'Discovery call held', meta: '17 Sep 2026, 15:10 \u00b7 42 min', tone: 'brand',
+        note: '"Has an MVP with 30 users. Cannot tell which of them are the customer."' },
+      { title: 'Discovery invite delivered', meta: '16 Sep 2026, 09:04 \u00b7 template DISC-01', tone: 'success' },
+      { title: 'Qualification call by Aashritha', meta: '15 Sep 2026, 18:20' },
+      { title: 'Applied through the intake form', meta: '14 Sep 2026, 11:04 \u00b7 fill time 3m 12s' }
+    ] })
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

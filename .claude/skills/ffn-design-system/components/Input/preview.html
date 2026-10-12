@@ -1,0 +1,24 @@
+<!-- @dsCard group="Forms" height=300 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  return h('div', { className: 'demo', style: { maxWidth: '420px' } },
+    h(F.Input, { label: 'Founder name', placeholder: 'Ananya Rao', defaultValue: 'Ananya Rao' }),
+    h(F.Input, { label: 'Work email', required: true, type: 'email', placeholder: 'ananya@company.com', hint: 'We send the discovery invite here.' }),
+    h(F.Input, { label: 'Lead ID', mono: true, defaultValue: 'FFN-2026-0418', disabled: true }),
+    h(F.Input, { label: 'Phone', mono: true, defaultValue: '+91 98490 0000', error: 'Enter a 10 digit number after the country code.' })
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

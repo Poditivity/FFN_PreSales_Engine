@@ -1,0 +1,99 @@
+name: Forms & Intake — build, lint, unit tests, e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run the Playwright e2e suite (it writes to the live Supabase project, then deletes its own E2E rows)."
+        type: boolean
+        required: false
+        default: true
+      e2e_spec:
+        description: "Optional: run only this Playwright spec (for example e2e/image-upload.spec.ts). Empty runs all."
+        required: false
+        default: ""
+  push:
+    branches:
+      - claude/busy-ritchie-0dfzii
+      - claude/determined-gates-b4x8q2
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://hxvkyghhvuhplqmimcfx.supabase.co
+      # Public anon/publishable key for this project — safe to commit, not a secret.
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4dmt5Z2hodnVocGxxbWltY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Njc0MTQsImV4cCI6MjEwNTA0MzQxNH0.ZwnVpVVfiZhfP6L7AuUNzI9vhMk1TnrJ8X2tqKTBydM
+      # SUPABASE_SERVICE_ROLE_KEY (a repo Actions secret) is not set here on
+      # purpose. It is handed only to the two steps that write to the live
+      # project, and only when e2e is switched on, so a push with e2e off never
+      # touches the database. Used server-side, in tests, to mint a real admin
+      # session (auth.admin.generateLink). Never sent to the browser.
+      # The account the e2e suite creates and signs in as. The suite RESETS its
+      # password on every run, so it must be a dedicated test address and never
+      # a real person's login (the helper refuses to touch anything else).
+      ADMIN_TEST_EMAIL: ${{ vars.ADMIN_TEST_EMAIL || 'e2e-admin@example.com' }}
+      # The R2 bucket's public address, which must equal the R2_PUBLIC_BASE_URL
+      # function secret. Not a secret. Override it with a repo Actions variable
+      # of the same name when the bucket moves to a custom domain.
+      E2E_R2_PUBLIC_BASE_URL: ${{ vars.E2E_R2_PUBLIC_BASE_URL || 'https://presales.foundersfirstnetwork.com' }}
+      # Password the e2e suite sets (via the service role) on the admin test
+      # account before driving the real /admin/login form with it — must be
+      # set as a repo Actions secret, same as SUPABASE_SERVICE_ROLE_KEY above.
+      ADMIN_TEST_PASSWORD: ${{ secrets.ADMIN_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      # e2e talks to the LIVE Supabase project, so pushes only run it when the
+      # repo Actions variable RUN_E2E_ON_PUSH is set to "true" (Settings ->
+      # Secrets and variables -> Actions -> Variables). A manual run decides via
+      # its own "run_e2e" input. Build, lint and unit tests always run.
+      - name: Decide whether to run e2e
+        id: e2e
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_INPUT: ${{ inputs.run_e2e }}
+          PUSH_VARIABLE: ${{ vars.RUN_E2E_ON_PUSH }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then choice="$DISPATCH_INPUT"; else choice="$PUSH_VARIABLE"; fi
+          if [ "$choice" = "true" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+          echo "e2e enabled: $choice"
+
+      - name: Install Playwright's Chromium (this CI runner has no pre-installed browser)
+        if: steps.e2e.outputs.run == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: npm run build
+        run: npm run build
+
+      - name: npm run lint
+        run: npm run lint
+
+      # The real-database tests in here (src/lib/leads/*.integration.test.ts) skip
+      # themselves when the key is absent, which is the case whenever e2e is off.
+      - name: npm run test (Vitest unit tests)
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.e2e.outputs.run == 'true' && secrets.SUPABASE_SERVICE_ROLE_KEY || '' }}
+        run: npm run test
+
+      - name: npm run test:e2e (real e2e against the live Supabase project)
+        if: steps.e2e.outputs.run == 'true'
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_SPEC: ${{ inputs.e2e_spec }}
+        run: npm run test:e2e -- $E2E_SPEC
+
+      - name: Upload Playwright report
+        if: always() && steps.e2e.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

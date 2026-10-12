@@ -1,0 +1,78 @@
+/* Founders First Network — shadcn/ui variable map.
+   Import AFTER tokens.css. Every shadcn component then inherits FFN
+   without being forked. Do not put literal colours in this file. */
+
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  --background: var(--surface-page);
+  --foreground: var(--ink);
+
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--brand-solid);
+  --primary-foreground: var(--on-brand);
+
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+
+  --accent: var(--surface-selected);
+  --accent-foreground: var(--brand);
+
+  --destructive: var(--danger-solid);
+  --destructive-foreground: var(--on-danger);
+
+  /* border is decorative; input and ring must carry meaning, so they take
+     the 3:1 tokens. Do not collapse these three onto one value. */
+  --border: var(--border);
+  --input: var(--border-control);
+  --ring: var(--focus-ring);
+
+  --radius: var(--radius-sm);
+
+  --chart-1: var(--chart-1);
+  --chart-2: var(--chart-2);
+  --chart-3: var(--chart-3);
+  --chart-4: var(--chart-4);
+  --chart-5: var(--chart-5);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand-solid);
+  --sidebar-primary-foreground: var(--on-brand);
+  --sidebar-accent: var(--surface-selected);
+  --sidebar-accent-foreground: var(--brand);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus-ring);
+}
+
+/* Tailwind v4: expose the FFN scales to utilities.
+   Delete this block on a Tailwind v3 repo and extend tailwind.config instead. */
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --color-brand: var(--brand);
+  --color-brand-solid: var(--brand-solid);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-surface: var(--surface);
+  --color-surface-page: var(--surface-page);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+}

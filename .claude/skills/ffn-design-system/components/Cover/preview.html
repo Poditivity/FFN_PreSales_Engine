@@ -1,0 +1,68 @@
+<!-- @dsCard height=320 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--surface-page); }
+  .cover { position: relative; width: 960px; height: 320px; background: var(--surface-page); }
+  .b-brand { fill: var(--brand-solid); }
+  .b-ink   { fill: var(--surface-inverse); }
+  .b-cyan  { fill: var(--success); }
+  .b-amber { fill: var(--warning); }
+  .shear   { fill: var(--surface-page); }
+  .name {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 64px;
+    letter-spacing: -0.02em;
+    fill: var(--ink);
+  }
+  .tagline {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 13px;
+    fill: var(--ink-subtle);
+  }
+</style>
+<div class="cover">
+  <!-- Derivation
+       blocks: brand-solid 560x110, surface-inverse 224x110, success 96x110, warning 56x110 bleeding off the right edge; sides are multiples of space-8 (32), gaps are space-2 (8), corners radius-xs (4).
+       arrangement: a full-width top band of unequal slabs, the brand slab taking more than half and the amber running off the right edge, because the FFN brand book composes in flush horizontal strips and the name is too wide for a right-hand zone.
+       pattern: the shear. The FFN mark is two F forms cut on a steep diagonal with square terminals, so the ground is cut out of the brand slab as 12 sheared bars, width space-2 (8) at a space-12 (48) pitch, few enough that the slab still reads as blue. A generic system would not lean the bars.
+       scales: space-2 8 gap and bar width, space-12 48 pitch, space-8 32 left inset and block module, space-10 40 clear under the band, radius-xs 4 on every block.
+  -->
+  <svg width="960" height="320" viewBox="0 0 960 320" role="img" aria-label="Founders First Network design system">
+    <defs>
+      <clipPath id="brandSlab">
+        <rect x="0" y="0" width="560" height="110" rx="4" />
+      </clipPath>
+    </defs>
+
+    <rect class="b-brand" x="0" y="0" width="560" height="110" rx="4" />
+    <g clip-path="url(#brandSlab)">
+      <g transform="skewX(-18)">
+        <rect class="shear" x="24" y="-40" width="8" height="200" />
+        <rect class="shear" x="72" y="-40" width="8" height="200" />
+        <rect class="shear" x="120" y="-40" width="8" height="200" />
+        <rect class="shear" x="168" y="-40" width="8" height="200" />
+        <rect class="shear" x="216" y="-40" width="8" height="200" />
+        <rect class="shear" x="264" y="-40" width="8" height="200" />
+        <rect class="shear" x="312" y="-40" width="8" height="200" />
+        <rect class="shear" x="360" y="-40" width="8" height="200" />
+        <rect class="shear" x="408" y="-40" width="8" height="200" />
+        <rect class="shear" x="456" y="-40" width="8" height="200" />
+        <rect class="shear" x="504" y="-40" width="8" height="200" />
+        <rect class="shear" x="552" y="-40" width="8" height="200" />
+      </g>
+    </g>
+
+    <rect class="b-ink" x="568" y="0" width="224" height="110" rx="4" />
+    <rect class="b-cyan" x="800" y="0" width="96" height="110" rx="4" />
+    <rect class="b-amber" x="904" y="0" width="56" height="110" rx="4" />
+
+    <text class="name" x="32" y="196">
+      <tspan x="32" dy="0">Founders First</tspan>
+      <tspan x="32" dy="61">Network</tspan>
+    </text>
+    <text class="tagline" x="32" y="288">Grow your startup without the noise.</text>
+  </svg>
+</div>

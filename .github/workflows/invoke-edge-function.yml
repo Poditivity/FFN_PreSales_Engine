@@ -1,0 +1,36 @@
+name: Invoke Supabase Edge Function (manual verification)
+
+on:
+  push:
+    branches:
+      - claude/busy-ritchie-0dfzii
+    paths:
+      - ".github/verify-request.json"
+      - ".github/workflows/invoke-edge-function.yml"
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Call the deployed function and print the raw response
+        env:
+          SUPABASE_URL: https://hxvkyghhvuhplqmimcfx.supabase.co
+          # Public anon/publishable key for this project — safe to commit, not a secret.
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4dmt5Z2hodnVocGxxbWltY2Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Njc0MTQsImV4cCI6MjEwNTA0MzQxNH0.ZwnVpVVfiZhfP6L7AuUNzI9vhMk1TnrJ8X2tqKTBydM
+        run: |
+          FUNCTION_NAME=$(jq -r '.function_name' .github/verify-request.json)
+          REQUEST_BODY=$(jq -c '.body' .github/verify-request.json)
+          echo "POST $SUPABASE_URL/functions/v1/$FUNCTION_NAME"
+          echo "Body: $REQUEST_BODY"
+          http_code=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$SUPABASE_URL/functions/v1/$FUNCTION_NAME" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$REQUEST_BODY")
+          echo "HTTP_STATUS=$http_code"
+          echo "----- response body -----"
+          cat response.json
+          echo
+          echo "--------------------------"

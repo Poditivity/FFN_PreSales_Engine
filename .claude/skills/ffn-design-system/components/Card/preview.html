@@ -1,0 +1,29 @@
+<!-- @dsCard group="Data display" height=260 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  return h('div', { className: 'demo' },
+    h(F.Card, {
+      title: 'Follow-ups due today',
+      subtitle: '4 leads, oldest untouched for 6 days',
+      actions: h(F.Button, { variant: 'secondary', size: 'sm' }, 'View all'),
+      footer: h(F.Button, { size: 'sm' }, 'Start the first one')
+    },
+      h('p', { style: { margin: 0, font: '400 14px/22px var(--font-sans)', color: 'var(--ink-muted)' } },
+        'Ananya Rao, Karthik Menon, Ritu Shah and one more are past the follow-up window for their stage.')
+    )
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

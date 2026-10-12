@@ -1,0 +1,48 @@
+<!-- @dsCard group="Data display" height=340 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  var rows = [
+    { id: 'FFN-2026-0418', name: 'Ananya Rao', company: 'Rethink Labs', stage: 'sql', owner: 'Sujatha', touched: '2 days ago', score: 78 },
+    { id: 'FFN-2026-0417', name: 'Karthik Menon', company: 'Grainpath', stage: 'mql', owner: 'Aashritha', touched: '4 days ago', score: 61 },
+    { id: 'FFN-2026-0412', name: 'Ritu Shah', company: 'Nine Yards', stage: 'dormant', owner: 'Sujatha', touched: '11 days ago', score: 34 },
+    { id: 'FFN-2026-0409', name: 'Imran Qureshi', company: 'Fieldnote', stage: 'customer', owner: 'Praveen', touched: 'today', score: 92 }
+  ];
+  var sel = useState('FFN-2026-0418'), selected = sel[0], setSel = sel[1];
+  var columns = [
+    { key: 'name', header: 'Lead', sortable: true, render: function (r) {
+        return h('div', { className: 'ffn-row', style: { gap: '10px' } },
+          h(F.Avatar, { name: r.name, size: 'sm' }),
+          h('div', null,
+            h('span', { style: { fontWeight: 500 } }, r.name),
+            h('span', { className: 'ffn-table__sub' }, r.company)));
+      } },
+    { key: 'id', header: 'Lead ID', render: function (r) { return h('span', { className: 'ffn-mono', style: { fontSize: '13px' } }, r.id); } },
+    { key: 'stage', header: 'Stage', render: function (r) { return h(F.StageBadge, { stage: r.stage }); } },
+    { key: 'owner', header: 'Owner' },
+    { key: 'touched', header: 'Last touch', sortable: true },
+    { key: 'score', header: 'Fit', align: 'right' }
+  ];
+  return h(F.DataTable, {
+    caption: 'Leads in the Validation Lab funnel',
+    columns: columns,
+    rows: rows,
+    sortBy: 'touched',
+    sortDir: 'desc',
+    selectedId: selected,
+    onRowClick: function (r) { setSel(r.id); }
+  });
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

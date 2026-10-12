@@ -1,0 +1,9 @@
+{
+  "function_name": "send-mail",
+  "body": {
+    "to": "poditivity.company@gmail.com",
+    "subject": "FFN Presales Engine — Phase 0 mail infra test",
+    "html": "<p>This is the real test send from the deployed send-mail Supabase Edge Function.</p>",
+    "source": "phase0-verification-zeptomail-prefix-fix"
+  }
+}

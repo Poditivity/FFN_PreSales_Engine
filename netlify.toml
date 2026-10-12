@@ -1,0 +1,11 @@
+# Netlify builds this as a Next.js app. Without this file the site was published
+# as static files from the repo root, so no page was served.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

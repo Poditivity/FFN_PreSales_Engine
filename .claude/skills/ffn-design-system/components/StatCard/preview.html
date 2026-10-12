@@ -1,0 +1,24 @@
+<!-- @dsCard group="Data display" height=200 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  return h('div', { className: 'demo-grid' },
+    h(F.StatCard, { label: 'Leads this month', value: '142', delta: '18%', direction: 'up', note: 'vs 120 in August' }),
+    h(F.StatCard, { label: 'MQL to SQL', value: '38.4%', delta: '4.1pt', direction: 'down', note: 'Discovery calls held: 31' }),
+    h(F.StatCard, { label: 'Median time to reply', value: '6h 20m', delta: 'no change', direction: 'flat', note: 'Target is under 4h' }),
+    h(F.StatCard, { label: 'Enrolled', value: '11', note: 'Validation Lab, cohort 3' })
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

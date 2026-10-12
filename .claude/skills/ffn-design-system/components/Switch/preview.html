@@ -1,0 +1,24 @@
+<!-- @dsCard group="Forms" height=170 -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .demo { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+  .demo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .demo-label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+</style>
+<div id="root" class="ffn-root"></div>
+<script>
+var F = window.FFN, h = React.createElement, useState = React.useState;
+function App() {
+
+  var s = useState(true), on = s[0], set = s[1];
+  var s2 = useState(false), on2 = s2[0], set2 = s2[1];
+  return h('div', { className: 'demo' },
+    h(F.Switch, { label: 'Daily digest to Google Chat', checked: on, onChange: function () { set(!on); } }),
+    h(F.Switch, { label: 'Pause all nurture email for this lead', checked: on2, onChange: function () { set2(!on2); } })
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
