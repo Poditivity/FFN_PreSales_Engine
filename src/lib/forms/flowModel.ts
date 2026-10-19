@@ -127,7 +127,9 @@ export function serializeGraph(nodes: FlowNode[], edges: FlowEdgeModel[]) {
 /** Pull all question fields out of any schema shape, in raw node order. */
 export function extractFields(schema: unknown): FormField[] {
   const { nodes } = normalizeSchema(schema);
-  return nodes.filter((n) => n.type === "question" && n.data.field).map((n) => n.data.field as FormField);
+  return nodes
+    .filter((n) => n.type === "question" && n.data.field && isInputField(n.data.field.type))
+    .map((n) => n.data.field as FormField);
 }
 
 // ---- Runtime traversal ------------------------------------------------------
@@ -170,6 +172,41 @@ export function entryNodeId(nodes: FlowNode[], edges: FlowEdgeModel[]): string |
   return firstQ?.id ?? null;
 }
 
+const isSectionNode = (node: FlowNode | null) => node?.type === "question" && node.data.field?.type === "section_header";
+
+/**
+ * A section heading is shown above the question that follows it, on the same page, so it is
+ * never a step of its own. A section with nothing to attach to (it leads straight to the end)
+ * still is.
+ */
+function isAttachedSection(nodes: FlowNode[], edges: FlowEdgeModel[], node: FlowNode | null): boolean {
+  if (!node || !isSectionNode(node)) return false;
+  const next = outgoingEdges(edges, node.id)[0];
+  return getNode(nodes, next?.target ?? null)?.type === "question";
+}
+
+/**
+ * Where to land when moving to a node: past any section headings that sit directly before a
+ * question, which are returned to be shown above it.
+ */
+export function resolveStep(
+  nodes: FlowNode[],
+  edges: FlowEdgeModel[],
+  startId: string | null,
+): { id: string | null; sections: FormField[] } {
+  const sections: FormField[] = [];
+  const seen = new Set<string>();
+  let id = startId;
+  while (id && !seen.has(id)) {
+    seen.add(id);
+    const node = getNode(nodes, id);
+    if (!node || !isAttachedSection(nodes, edges, node)) break;
+    sections.push(node.data.field as FormField);
+    id = nextNodeId(node, undefined, edges);
+  }
+  return { id, sections };
+}
+
 /** Longest path (in question-steps) from entry to any end — used for progress. */
 export function estimateSteps(nodes: FlowNode[], edges: FlowEdgeModel[]): number {
   const entry = entryNodeId(nodes, edges);
@@ -186,12 +223,14 @@ export function estimateSteps(nodes: FlowNode[], edges: FlowEdgeModel[]): number
       return;
     }
     const outs = outgoingEdges(edges, id);
+    // A section shown with the next question adds no step of its own.
+    const step = isAttachedSection(nodes, edges, node) ? 0 : 1;
     if (outs.length === 0) {
-      best = Math.max(best, depth + 1);
+      best = Math.max(best, depth + step);
       return;
     }
     const nextSeen = new Set(seen).add(id);
-    outs.forEach((e) => dfs(e.target, depth + 1, nextSeen));
+    outs.forEach((e) => dfs(e.target, depth + step, nextSeen));
   };
   dfs(entry, 0, new Set());
   return Math.max(1, best);

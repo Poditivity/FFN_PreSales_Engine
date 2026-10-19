@@ -225,3 +225,92 @@ describe("FormRenderer: email, consent and files", () => {
     expect(uploadFormFile).not.toHaveBeenCalled();
   });
 });
+
+describe("FormRenderer: text boxes, sections and the applicant's name", () => {
+  beforeEach(() => {
+    flush.mockReset().mockResolvedValue("submission-1");
+    setData.mockReset();
+  });
+
+  it("shows a text box on its own step, keeps its line breaks and links, and moves on with Continue", () => {
+    const note = makeQuestionNode("text_block", { x: 0, y: 0 });
+    note.data.field = { ...note.data.field!, content: "Read first\n\nSee [the guide](https://ffn.example/guide)" };
+    const q = emailQuestion();
+    render(<FormRenderer form={formWith([note, q])} settings={settings} />);
+
+    const text = screen.getByTestId(`field-${note.id}`);
+    expect(text).toHaveTextContent("Read first");
+    expect(text.querySelector("p")).toHaveStyle({ whiteSpace: "pre-line" });
+    expect(screen.getByRole("link", { name: "the guide" })).toHaveAttribute("href", "https://ffn.example/guide");
+    expect(screen.queryByTestId(`field-${q.id}`)).toBeNull();
+
+    fireEvent.click(screen.getByTestId("submit-button"));
+    expect(screen.getByTestId(`field-${q.id}`)).toBeInTheDocument();
+  });
+
+  it("shows a section heading with its description", () => {
+    const section = makeQuestionNode("section_header", { x: 0, y: 0 });
+    section.data.field = { ...section.data.field!, label: "About you", helpText: "A few details.\nTakes a minute." };
+    render(<FormRenderer form={formWith([section, emailQuestion()])} settings={settings} />);
+    expect(screen.getByRole("heading", { name: "About you" })).toBeInTheDocument();
+    expect(screen.getByText(/A few details\./)).toHaveStyle({ whiteSpace: "pre-line" });
+  });
+
+  it("puts the applicant's name into the thank-you message", async () => {
+    const nameQ = makeQuestionNode("name", { x: 0, y: 0 });
+    const form = formWith([nameQ]);
+    form.thank_you_message = "Thank you, {name}!";
+    render(<FormRenderer form={form} settings={settings} />);
+    fireEvent.change(screen.getByTestId(`field-${nameQ.id}`), { target: { value: "Asha Rao" } });
+    fireEvent.click(screen.getByLabelText("I agree to the privacy policy"));
+    fireEvent.click(screen.getByTestId("submit-button"));
+    await waitFor(() => expect(screen.getByTestId("submission-confirmation")).toHaveTextContent("Thank you, Asha Rao!"));
+  });
+
+  it("leaves {name} out of the message on a form that does not ask for a name", async () => {
+    const q = emailQuestion();
+    const form = formWith([q]);
+    form.thank_you_message = "Thank you {name}!";
+    render(<FormRenderer form={form} settings={settings} />);
+    fireEvent.change(screen.getByTestId(`field-${q.id}`), { target: { value: "ada@example.com" } });
+    fireEvent.click(screen.getByLabelText("I agree to the privacy policy"));
+    fireEvent.click(screen.getByTestId("submit-button"));
+    await waitFor(() => expect(screen.getByTestId("submission-confirmation")).toHaveTextContent("Thank you!"));
+  });
+});
+
+describe("FormRenderer: a section shares its page with the next question", () => {
+  beforeEach(() => {
+    flush.mockReset().mockResolvedValue("submission-1");
+    setData.mockReset();
+  });
+
+  it("shows a section in the middle of the form together with the question after it, and keeps it on Back", () => {
+    const first = makeQuestionNode("text", { x: 0, y: 0 });
+    first.data.field = { ...first.data.field!, label: "Startup name", required: true };
+    const section = makeQuestionNode("section_header", { x: 0, y: 0 });
+    section.data.field = { ...section.data.field!, label: "Your team", helpText: "Tell us who builds it." };
+    const second = makeQuestionNode("text", { x: 0, y: 0 });
+    second.data.field = { ...second.data.field!, label: "Team size" };
+    render(<FormRenderer form={formWith([first, section, second])} settings={settings} />);
+
+    fireEvent.change(screen.getByTestId(`field-${first.id}`), { target: { value: "Acme" } });
+    fireEvent.click(screen.getByTestId("submit-button"));
+
+    expect(screen.getByRole("heading", { name: "Your team" })).toBeInTheDocument();
+    expect(screen.getByTestId(`field-${second.id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`field-${first.id}`)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByTestId(`field-${first.id}`)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your team" })).toBeNull();
+  });
+
+  it("still shows a section that leads straight to the end, as its own page", () => {
+    const section = makeQuestionNode("section_header", { x: 0, y: 0 });
+    section.data.field = { ...section.data.field!, label: "All done" };
+    render(<FormRenderer form={formWith([section])} settings={settings} />);
+    expect(screen.getByRole("heading", { name: "All done" })).toBeInTheDocument();
+    expect(screen.getByTestId("submit-button")).toBeInTheDocument();
+  });
+});

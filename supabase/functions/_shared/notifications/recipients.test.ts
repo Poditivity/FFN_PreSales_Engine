@@ -16,6 +16,11 @@ describe("resolveSubmissionContact", () => {
     });
   });
 
+  it("reads the name from a Name-type question whatever its label", () => {
+    const named = [{ id: "n", label: "Applicant", type: "name" }];
+    expect(resolveSubmissionContact({ n: "Asha Rao" }, named).name).toBe("Asha Rao");
+  });
+
   it("falls back to a field labelled like a phone or WhatsApp number", () => {
     const labelled = [{ id: "w", label: "WhatsApp number", type: "text" }];
     expect(resolveSubmissionContact({ w: "+91 98765 43210" }, labelled).phone).toBe("+91 98765 43210");

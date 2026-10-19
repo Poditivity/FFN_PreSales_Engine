@@ -3,7 +3,7 @@
 import { Plus, Trash2, X } from "lucide-react";
 import { Button, Checkbox, Input, Select, Textarea } from "@/components/ffn";
 import { fieldNeedsOptions, type FlowEdgeModel, type FlowNode } from "@/lib/forms/flowModel";
-import { fileConfigOf, FIELD_TYPES, makeField, type FormField } from "@/lib/forms/formLogic";
+import { fileConfigOf, FIELD_TYPES, isDisplayType, makeField, type FormField } from "@/lib/forms/formLogic";
 import {
   FILE_CATEGORIES,
   FILE_CATEGORY_IDS,
@@ -15,7 +15,10 @@ import {
 // FFN-styled port of build-fellowship's superadmin/flowEditorPanel.jsx —
 // the property panel for whatever is selected on the builder canvas.
 
-const QUESTION_TYPES = FIELD_TYPES.filter((f) => f.type !== "section_header");
+const QUESTION_TYPES = FIELD_TYPES.filter((f) => !isDisplayType(f.type));
+
+/** Shown under any message box where {name} works, which is only on a form that asks for a name. */
+export const NAME_HINT = "Write {name} to greet the applicant by the name they gave.";
 
 function PanelShell({
   title,
@@ -75,6 +78,41 @@ export function NodeFieldEditor({
     if (has && files.categories.length === 1) return;
     setFiles({ categories: FILE_CATEGORY_IDS.filter((c) => (c === id ? !has : files.categories.includes(c))) });
   };
+
+  if (field.type === "section_header") {
+    return (
+      <PanelShell title="Section" onDelete={onDelete}>
+        <Input size="sm" label="Heading" value={field.label} onChange={(e) => set({ label: e.target.value })} />
+        <Textarea
+          rows={4}
+          label="Description (optional)"
+          hint="Line breaks are kept. Add a link with [text](https://...)."
+          value={field.helpText || ""}
+          onChange={(e) => set({ helpText: e.target.value })}
+        />
+        <p className="caption" style={{ color: "var(--ink-subtle)" }}>
+          A section is shown above the question that follows it, on the same page.
+        </p>
+      </PanelShell>
+    );
+  }
+
+  if (field.type === "text_block") {
+    return (
+      <PanelShell title="Text box" onDelete={onDelete}>
+        <Textarea
+          rows={8}
+          label="Text"
+          hint="Applicants can read this but not change it. Line breaks are kept. Add a link with [text](https://...) or paste an address."
+          value={field.content ?? ""}
+          onChange={(e) => set({ content: e.target.value })}
+        />
+        <p className="caption" style={{ color: "var(--ink-subtle)" }}>
+          A text box is its own screen. The applicant reads it, then presses Continue.
+        </p>
+      </PanelShell>
+    );
+  }
 
   return (
     <PanelShell title="Question" onDelete={onDelete}>
@@ -197,10 +235,13 @@ export function EndEditor({
   node,
   onChange,
   onDelete,
+  hasName,
 }: {
   node: FlowNode;
   onChange: (node: FlowNode) => void;
   onDelete: () => void;
+  /** The form has a Name question, so {name} can be used in the message. */
+  hasName: boolean;
 }) {
   const set = (patch: Partial<FlowNode["data"]>) => onChange({ ...node, data: { ...node.data, ...patch } });
   return (
@@ -215,6 +256,7 @@ export function EndEditor({
         rows={3}
         label="Thank-you message (optional)"
         placeholder="Leave blank to use the form's default message"
+        hint={hasName ? NAME_HINT : undefined}
         value={node.data.message || ""}
         onChange={(e) => set({ message: e.target.value })}
       />

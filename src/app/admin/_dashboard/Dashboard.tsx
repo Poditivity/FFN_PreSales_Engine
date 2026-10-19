@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FileText, Link2, Plus, Search, UserPlus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { Tabs } from "@/components/ffn";
+import { MultiSelect, Tabs } from "@/components/ffn";
 import { attentionQueue, buildSummary, dashboardHref, greeting, PERIODS, type DashboardTab } from "@/lib/dashboard/metrics";
 import {
   fetchActivity,
@@ -36,11 +36,17 @@ const EMPTY_CONTENT = new Map<string, string>();
 export function Dashboard({
   period,
   tab,
+  formIds,
+  forms,
   firstName,
   isSuperAdmin,
 }: {
   period: PeriodId;
   tab: DashboardTab;
+  /** The forms the dashboard is narrowed to. Empty means every form. */
+  formIds: string[];
+  /** Every form, for the filter. */
+  forms: { id: string; title: string }[];
   firstName: string;
   isSuperAdmin: boolean;
 }) {
@@ -54,26 +60,30 @@ export function Dashboard({
   // 30s, the to-do list and feed every minute, the period numbers every 5
   // minutes. Previous data stays on screen while a new period loads, and
   // nothing animates when it is replaced.
+  const formKey = formIds.join(",");
   const overview = useQuery({
-    queryKey: ["dashboard", "overview", period, tz],
-    queryFn: () => fetchOverview(supabase, period, new Date(), tz),
+    queryKey: ["dashboard", "overview", period, tz, formKey],
+    queryFn: () => fetchOverview(supabase, period, new Date(), tz, formIds),
     placeholderData: keepPreviousData,
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
   });
   const attention = useQuery({
-    queryKey: ["dashboard", "attention"],
-    queryFn: () => fetchAttention(supabase),
+    queryKey: ["dashboard", "attention", formKey],
+    queryFn: () => fetchAttention(supabase, formIds),
+    placeholderData: keepPreviousData,
     refetchInterval: 60_000,
   });
   const live = useQuery({
-    queryKey: ["dashboard", "live"],
-    queryFn: () => fetchLive(supabase),
+    queryKey: ["dashboard", "live", formKey],
+    queryFn: () => fetchLive(supabase, formIds),
+    placeholderData: keepPreviousData,
     refetchInterval: 30_000,
   });
   const activity = useQuery({
-    queryKey: ["dashboard", "activity"],
-    queryFn: () => fetchActivity(supabase, 30),
+    queryKey: ["dashboard", "activity", formKey],
+    queryFn: () => fetchActivity(supabase, 30, formIds),
+    placeholderData: keepPreviousData,
     refetchInterval: 60_000,
   });
 
@@ -114,8 +124,8 @@ export function Dashboard({
 
   const attentionCount = attentionQueue(attention.data).length;
 
-  function go(next: { period?: PeriodId; tab?: DashboardTab }) {
-    router.replace(dashboardHref(next.period ?? period, next.tab ?? tab), { scroll: false });
+  function go(next: { period?: PeriodId; tab?: DashboardTab; formIds?: string[] }) {
+    router.replace(dashboardHref(next.period ?? period, next.tab ?? tab, next.formIds ?? formIds), { scroll: false });
   }
 
   // Desktop keeps them small on the tab row. Phones and tablets get the medium
@@ -155,7 +165,20 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="flex items-center" style={{ gap: "var(--space-3)" }}>
+        <div className="flex flex-wrap items-end" style={{ gap: "var(--space-3)" }}>
+          {forms.length > 1 && (
+            <div style={{ width: "calc(var(--space-16) * 3)", maxWidth: "100%" }}>
+              <MultiSelect
+                size="sm"
+                label="Forms"
+                allLabel="All forms"
+                noun="forms"
+                value={formIds}
+                options={forms.map((f) => ({ value: f.id, label: f.title }))}
+                onChange={(ids) => go({ formIds: ids })}
+              />
+            </div>
+          )}
           <div className="dash-segment" role="group" aria-label="Period">
             {PERIODS.map((p) => (
               <button
@@ -248,7 +271,7 @@ export function Dashboard({
                 </div>
               </section>
 
-              <CallsCard />
+              <CallsCard formIds={formIds} />
 
               <HubEngagementCard overview={overview.data} period={period} contentNames={contentNames.data ?? EMPTY_CONTENT} />
 

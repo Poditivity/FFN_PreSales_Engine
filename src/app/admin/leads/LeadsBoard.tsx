@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, LayoutGrid, Phone, Rows3, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, LayoutGrid, Phone, Plus, Rows3, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Alert, Button, Checkbox, Input, Modal, Select, StageBadge } from "@/components/ffn";
+import { Alert, Button, Checkbox, Input, Modal, MultiSelect, Select, StageBadge } from "@/components/ffn";
 import { CallForm } from "@/components/leads/CallForm";
 import { utcToIST } from "@/lib/forms/ist";
 import { callsWord, type CallDraft } from "@/lib/leads/calls";
@@ -18,6 +19,7 @@ import { moveLeadsToStage, moveLeadToStage } from "@/lib/leads/moveStage";
 import { ALL_LEAD_STAGES, OFF_PATH_STAGES, PIPELINE_STAGES, type LeadStage, type LeadStageDef } from "@/lib/leads/schema";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ScorePill, type Band } from "../submissions/parts";
+import { ManualLeadModal, type ManualLeadForm } from "./ManualLeadModal";
 
 export interface BoardLead {
   id: string;
@@ -277,18 +279,29 @@ export function LeadsBoard({
   initialLeads,
   programs,
   owners = [],
+  manualForms = [],
   loadError,
 }: {
   initialLeads: BoardLead[];
   programs: ProgramOption[];
+  /** The forms a lead can be added on by hand. */
+  manualForms?: ManualLeadForm[];
   /** The team, for the Owner filter and the owner shown under each name. */
   owners?: OwnerOption[];
   loadError?: string | null;
 }) {
+  const router = useRouter();
   const [leads, setLeads] = useState(initialLeads);
+  // A refresh after adding a lead brings in a fresh list; take it over the local copy.
+  const [seenInitial, setSeenInitial] = useState(initialLeads);
+  if (initialLeads !== seenInitial) {
+    setSeenInitial(initialLeads);
+    setLeads(initialLeads);
+  }
+  const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("list");
   const [search, setSearch] = useState("");
-  const [programId, setProgramId] = useState("");
+  const [programIds, setProgramIds] = useState<string[]>([]);
   const [stage, setStage] = useState<"" | LeadStage>("");
   const [sort, setSort] = useState("newest");
   const [callFilter, setCallFilter] = useState("");
@@ -307,19 +320,21 @@ export function LeadsBoard({
   const [exporting, setExporting] = useState(false);
 
   const showForm = programs.length > 1;
+  // The filter is always there once a form exists, so it can be found before a second form has leads.
+  const showFormFilter = programs.length > 0;
 
   // Everything but the stage filter, so each stage can show how many leads it
   // would give if picked.
   const scoped = useMemo(() => {
     const term = search.trim().toLowerCase();
     return leads.filter((l) => {
-      if (programId && l.programId !== programId) return false;
+      if (programIds.length > 0 && !programIds.includes(l.programId)) return false;
       if (term && !l.email.toLowerCase().includes(term) && !l.name.toLowerCase().includes(term)) return false;
       if (!matchesCallFilter(l, callFilter)) return false;
       if (ownerFilter === "none" ? !!l.ownerId : ownerFilter && l.ownerId !== ownerFilter) return false;
       return true;
     });
-  }, [leads, search, programId, callFilter, ownerFilter]);
+  }, [leads, search, programIds, callFilter, ownerFilter]);
 
   const stageCounts = useMemo(() => {
     const counts = new Map<LeadStage, number>();
@@ -361,7 +376,7 @@ export function LeadsBoard({
   // after being ticked is not moved by accident.
   const selectedInView = useMemo(() => filtered.filter((l) => selected.has(l.id)), [filtered, selected]);
   const allSelected = filtered.length > 0 && selectedInView.length === filtered.length;
-  const filtersActive = !!(search.trim() || programId || stage || callFilter || ownerFilter);
+  const filtersActive = !!(search.trim() || programIds.length > 0 || stage || callFilter || ownerFilter);
   const ownerName = (id: string | null) => (id ? (owners.find((o) => o.id === id)?.label ?? null) : null);
 
   // Board cards are ticked only when one stage is on screen, matching a
@@ -459,7 +474,7 @@ export function LeadsBoard({
         records = records.filter((r) => order.has(r.id)).sort((a, b) => order.get(a.id)! - order.get(b.id)!);
         note = [
           stage ? `Stage: ${stageLabel(stage)}` : null,
-          programId ? `Form: ${programs.find((p) => p.id === programId)?.title}` : null,
+          programIds.length > 0 ? `Form: ${programIds.map((id) => programs.find((p) => p.id === id)?.title).filter(Boolean).join(", ")}` : null,
           search.trim() ? `Search: ${search.trim()}` : null,
         ]
           .filter(Boolean)
@@ -546,6 +561,9 @@ export function LeadsBoard({
         </div>
 
         <div className="flex items-center flex-wrap" style={{ gap: "var(--space-3)" }}>
+          <Button iconLeft={<Plus size={16} />} onClick={() => setAddOpen(true)}>
+            Add lead
+          </Button>
           <div className="dash-segment" role="group" aria-label="View">
             {(
               [
@@ -636,15 +654,17 @@ export function LeadsBoard({
             }}
           />
         </div>
-        {showForm && (
+        {showFormFilter && (
           <div style={{ flex: "1 1 calc(var(--space-16) * 2.5)", minWidth: 0, maxWidth: 260 }}>
-            <Select
+            <MultiSelect
               size="sm"
               label="Form"
-              value={programId}
-              options={[{ value: "", label: "All forms" }, ...programs.map((p) => ({ value: p.id, label: p.title }))]}
-              onChange={(e) => {
-                setProgramId(e.target.value);
+              allLabel="All forms"
+              noun="forms"
+              value={programIds}
+              options={programs.map((p) => ({ value: p.id, label: p.title }))}
+              onChange={(ids) => {
+                setProgramIds(ids);
                 resetPage();
               }}
             />
@@ -686,7 +706,7 @@ export function LeadsBoard({
             iconLeft={<X size={14} />}
             onClick={() => {
               setSearch("");
-              setProgramId("");
+              setProgramIds([]);
               setStage("");
               setCallFilter("");
               setOwnerFilter("");
@@ -950,6 +970,18 @@ export function LeadsBoard({
             </Button>
           </div>
         </div>
+      )}
+
+      {addOpen && (
+        <ManualLeadModal
+          forms={manualForms}
+          onClose={() => setAddOpen(false)}
+          onAdded={() => {
+            setAddOpen(false);
+            setNotice("Lead added.");
+            router.refresh();
+          }}
+        />
       )}
 
       {callTarget && (

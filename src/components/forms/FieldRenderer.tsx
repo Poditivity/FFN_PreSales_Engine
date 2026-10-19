@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { Button, Checkbox, Field, Input, Select, Textarea } from "@/components/ffn";
 import { fileConfigOf, type FormField } from "@/lib/forms/formLogic";
 import { FileField } from "./FileField";
+import { FormText } from "./FormText";
 
 // FFN-styled rendering for every field type in build-fellowship's real
 // FieldComponents.jsx. text/textarea/email/select use the existing FFN
@@ -79,10 +80,16 @@ export function FieldRenderer({
       <div style={{ paddingTop: "var(--space-4)", borderTop: "1px solid var(--border)" }}>
         <h3 className="h2">{field.label}</h3>
         {field.helpText && (
-          <p className="body-sm" style={{ color: "var(--ink-muted)", marginTop: "var(--space-1)" }}>
-            {field.helpText}
-          </p>
+          <FormText text={field.helpText} className="body-sm" style={{ color: "var(--ink-muted)", marginTop: "var(--space-1)" }} />
         )}
+      </div>
+    );
+  }
+
+  if (field.type === "text_block") {
+    return (
+      <div data-testid={`field-${field.id}`}>
+        <FormText text={field.content ?? ""} className="body-lg" />
       </div>
     );
   }

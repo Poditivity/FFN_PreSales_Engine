@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { formSchema } from "@/lib/forms/schema";
 import { FormBuilder } from "../FormBuilder";
 
@@ -10,7 +11,7 @@ export default async function EditFormPage({
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.from("forms").select("*").eq("id", id).maybeSingle();
 
-  if (error || !data) notFound();
+  if (error || !data || data.slug === MANUAL_FORM_SLUG) notFound();
 
   const form = formSchema.parse(data);
   const { count } = await supabase

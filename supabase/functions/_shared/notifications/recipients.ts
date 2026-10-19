@@ -29,7 +29,7 @@ function answer(data: Record<string, unknown>, field: SubmissionField | undefine
 
 export function resolveSubmissionContact(data: Record<string, unknown>, fields: SubmissionField[]): SubmissionContact {
   const email = answer(data, fields.find((f) => f.type === "email"));
-  const name = answer(data, fields.find((f) => f.type === "text" && /name/i.test(f.label ?? "")));
+  const name = answer(data, fields.find((f) => f.type === "name" || (f.type === "text" && /name/i.test(f.label ?? ""))));
   const pickPhone = (predicate: (f: SubmissionField) => boolean) => answer(data, fields.find((f) => predicate(f) && answer(data, f)));
   const phone = pickPhone((f) => f.type === "phone") || pickPhone((f) => PHONE_LABEL.test(f.label ?? ""));
   return { name, email, phone };

@@ -1,3 +1,4 @@
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { SubmissionsView, type SubmissionForm } from "./SubmissionsView";
 
@@ -8,6 +9,7 @@ export default async function SubmissionsPage({ searchParams }: PageProps<"/admi
   const { data: forms, error } = await supabase
     .from("forms")
     .select("id, title, schema")
+    .neq("slug", MANUAL_FORM_SLUG)
     .order("created_at", { ascending: false })
     .returns<SubmissionForm[]>();
 

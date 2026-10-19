@@ -373,7 +373,7 @@ Deno.serve(async (req: Request) => {
     } else if (mod.type === "testimonials") {
       const { data: testimonials } = await admin
         .from("testimonials")
-        .select("id, testimonial_quote, video_link, audience, featured, founders:founder_id(id, name, startup_name, startup_logo_url)")
+        .select("id, testimonial_quote, video_link, audience, featured, founders:founder_id(id, name, photo_url, startup_name, startup_logo_url)")
         .eq("visibility", "public");
       const eligible = resolveEligible((testimonials ?? []) as Any[], mod, trackId);
 

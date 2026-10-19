@@ -4,9 +4,11 @@
 // source; only the TypeScript typing is this project's own.
 
 import { DEFAULT_FILE_CONFIG, normalizeFileConfig, type FileFieldConfig } from "../../../supabase/functions/_shared/uploadRules";
+import { DISPLAY_FIELD_TYPES } from "../../../supabase/functions/_shared/formSchema";
 
 export type FieldType =
   | "text"
+  | "name"
   | "textarea"
   | "email"
   | "phone"
@@ -18,10 +20,12 @@ export type FieldType =
   | "date"
   | "rating"
   | "file"
-  | "section_header";
+  | "section_header"
+  | "text_block";
 
 export const FIELD_TYPES: { type: FieldType; label: string }[] = [
   { type: "text", label: "Short text" },
+  { type: "name", label: "Name" },
   { type: "textarea", label: "Long text" },
   { type: "email", label: "Email" },
   { type: "phone", label: "Phone" },
@@ -33,12 +37,16 @@ export const FIELD_TYPES: { type: FieldType; label: string }[] = [
   { type: "date", label: "Date" },
   { type: "rating", label: "Rating (1-5)" },
   { type: "file", label: "File upload" },
-  { type: "section_header", label: "Section header" },
+  { type: "section_header", label: "Section" },
+  { type: "text_block", label: "Text box" },
 ];
+
+/** Steps that only show something and ask nothing: a section heading or a block of text. */
+export const isDisplayType = (type: FieldType) => DISPLAY_FIELD_TYPES.includes(type);
 
 const NEEDS_OPTIONS: FieldType[] = ["select", "multiselect", "radio"];
 export const fieldNeedsOptions = (type: FieldType) => NEEDS_OPTIONS.includes(type);
-export const isInputField = (type: FieldType) => type !== "section_header";
+export const isInputField = (type: FieldType) => !isDisplayType(type);
 
 export type ShowIfOperator = "equals" | "not_equals" | "contains" | "not_empty";
 
@@ -65,6 +73,8 @@ export interface FormField {
   options?: string[];
   validation: FieldValidation;
   showIf: ShowIf | null;
+  /** Text box only: the text the applicant reads. A link is written as [label](https://...). */
+  content?: string;
   /** File questions only: which file types are accepted and how large a file may be. */
   fileConfig?: FileFieldConfig;
 }
@@ -77,12 +87,13 @@ export function makeField(type: FieldType): FormField {
   return {
     id: uid("field"),
     type,
-    label: type === "section_header" ? "Section" : "Untitled question",
+    label: type === "section_header" ? "Section" : type === "text_block" ? "Text box" : type === "name" ? "Your name" : "Untitled question",
     placeholder: "",
     required: false,
     helpText: "",
     width: "full",
     options: fieldNeedsOptions(type) ? ["Option 1", "Option 2"] : undefined,
+    content: type === "text_block" ? "" : undefined,
     validation: {},
     showIf: null,
     fileConfig: type === "file" ? { ...DEFAULT_FILE_CONFIG, categories: [...DEFAULT_FILE_CONFIG.categories] } : undefined,
