@@ -21,6 +21,7 @@ import type { FieldType } from "@/lib/forms/formLogic";
 
 const TYPE_LABEL: Record<FieldType, string> = {
   text: "Short text",
+  name: "Name",
   textarea: "Long text",
   email: "Email",
   phone: "Phone",
@@ -33,6 +34,7 @@ const TYPE_LABEL: Record<FieldType, string> = {
   rating: "Rating",
   file: "File upload",
   section_header: "Section",
+  text_block: "Text box",
 };
 
 const dot: React.CSSProperties = {
@@ -94,7 +96,7 @@ export function EndNode({ data, selected }: NodeProps) {
 
 export function QuestionNode({ id, data, selected }: NodeProps) {
   const updateNodeInternals = useUpdateNodeInternals();
-  const field = (data as { field: { type: FieldType; label: string; required: boolean; options?: string[] } }).field;
+  const field = (data as { field: { type: FieldType; label: string; required: boolean; options?: string[]; content?: string } }).field;
   const choice = isChoiceField(field.type);
   const options = (field.options ?? []).filter(Boolean);
 
@@ -124,7 +126,9 @@ export function QuestionNode({ id, data, selected }: NodeProps) {
           {field.required && <span style={{ color: "var(--danger)" }}> · required</span>}
         </div>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>
-          {field.label || "Untitled question"}
+          {field.type === "text_block"
+            ? (field.content ?? "").trim().slice(0, 80) || "Empty text box"
+            : field.label || "Untitled question"}
         </div>
       </div>
 

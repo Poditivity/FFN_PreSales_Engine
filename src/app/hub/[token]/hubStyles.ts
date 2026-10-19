@@ -185,8 +185,6 @@ export const HUB_CSS = `
 .tm-actions{display:flex;flex-wrap:wrap;gap:var(--space-4)}
 @media (min-width:720px){
   .tm-card{padding:var(--space-8)}
-  .tm-card--lead{grid-column:1 / -1}
-  .tm-card--lead .tm-quote{max-width:calc(var(--space-16) * 12);font-size:24px;line-height:34px;letter-spacing:-.01em}
 }
 
 /* Relevant links */

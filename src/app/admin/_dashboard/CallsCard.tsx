@@ -18,11 +18,24 @@ interface CallsSnapshot {
   sqlUncalled: number;
 }
 
-async function fetchCallsSnapshot(supabase: ReturnType<typeof createBrowserSupabaseClient>): Promise<CallsSnapshot> {
+async function fetchCallsSnapshot(
+  supabase: ReturnType<typeof createBrowserSupabaseClient>,
+  formIds: string[],
+): Promise<CallsSnapshot> {
   const since = new Date(Date.now() - WEEK_MS).toISOString();
+  // With forms chosen, only calls to leads from those forms count. The embedded
+  // inner joins are added only then, so the unfiltered reads are the original ones.
+  const filtered = formIds.length > 0;
+  const callsQuery = () =>
+    filtered
+      ? supabase
+          .from("lead_calls")
+          .select("id, leads!inner(form_submissions!inner(form_id))", { count: "exact", head: true })
+          .in("leads.form_submissions.form_id", formIds)
+      : supabase.from("lead_calls").select("id", { count: "exact", head: true });
   const [week, connected] = await Promise.all([
-    supabase.from("lead_calls").select("id", { count: "exact", head: true }).gte("called_at", since),
-    supabase.from("lead_calls").select("id", { count: "exact", head: true }).gte("called_at", since).eq("outcome", "connected"),
+    callsQuery().gte("called_at", since),
+    callsQuery().gte("called_at", since).eq("outcome", "connected"),
   ]);
   if (week.error) throw new Error(week.error.message);
   if (connected.error) throw new Error(connected.error.message);
@@ -32,9 +45,10 @@ async function fetchCallsSnapshot(supabase: ReturnType<typeof createBrowserSupab
   let mqlUncalled = 0;
   let sqlUncalled = 0;
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("id, stage, lead_calls(count)")
+    const base = filtered
+      ? supabase.from("leads").select("id, stage, lead_calls(count), form_submissions!inner(form_id)").in("form_submissions.form_id", formIds)
+      : supabase.from("leads").select("id, stage, lead_calls(count)");
+    const { data, error } = await base
       .in("stage", ["mql", "sql"])
       .order("id")
       .range(from, from + PAGE - 1)
@@ -51,11 +65,11 @@ async function fetchCallsSnapshot(supabase: ReturnType<typeof createBrowserSupab
 }
 
 /** What the team's calling looks like this week, and who is still waiting for a first call. */
-export function CallsCard() {
+export function CallsCard({ formIds = [] }: { formIds?: string[] }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const query = useQuery({
-    queryKey: ["dashboard", "calls"],
-    queryFn: () => fetchCallsSnapshot(supabase),
+    queryKey: ["dashboard", "calls", formIds.join(",")],
+    queryFn: () => fetchCallsSnapshot(supabase, formIds),
     refetchInterval: 60_000,
   });
 

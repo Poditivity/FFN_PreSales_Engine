@@ -100,3 +100,20 @@ describe("flowModel — estimateSteps", () => {
     expect(estimateSteps(nodes, edges)).toBe(2);
   });
 });
+
+describe("sections share a page with the next question", () => {
+  it("lands past a section and hands it back to show above the question", async () => {
+    const { resolveStep, makeQuestionNode, makeEdge, makeEndNode, makeStartNode, estimateSteps } = await import("./flowModel");
+    const start = makeStartNode();
+    const sec = makeQuestionNode("section_header", { x: 0, y: 0 });
+    const q = makeQuestionNode("text", { x: 0, y: 0 });
+    const end = makeEndNode({ x: 0, y: 0 });
+    const edges = [makeEdge("start", sec.id), makeEdge(sec.id, q.id), makeEdge(q.id, end.id)];
+    const nodes = [start, sec, q, end];
+    const step = resolveStep(nodes, edges, sec.id);
+    expect(step.id).toBe(q.id);
+    expect(step.sections.map((f) => f.id)).toEqual([sec.id]);
+    // The section adds no page of its own, so the form is one step long.
+    expect(estimateSteps(nodes, edges)).toBe(1);
+  });
+});

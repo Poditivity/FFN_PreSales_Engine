@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { MANUAL_FORM_SLUG } from "./manualForm";
 import { EMPTY_SOURCE, type SubmissionRow, type SubmissionSource } from "./submissionAnalysis";
 import type { FormSubmissionRow } from "./schema";
 
@@ -64,11 +65,13 @@ export async function loadSubmissions(
 ): Promise<{ rows: SubmissionRow[]; total: number }> {
   let query = supabase
     .from("form_submissions")
-    .select("*, forms(title, slug)", { count: "exact" })
+    .select("*, forms!inner(title, slug)", { count: "exact" })
     .eq("completed", true)
     .order("created_at", { ascending: false })
     .range(0, limit - 1);
   if (formId) query = query.eq("form_id", formId);
+  // Leads the team added by hand are not applications, so they are not reviewed here.
+  query = query.neq("forms.slug", MANUAL_FORM_SLUG);
   // A new application has no status stored, and the screens show that as "New", so
   // the New filter has to match an empty status as well as an explicit "new".
   if (status === "new") query = query.or("status.is.null,status.eq.new");

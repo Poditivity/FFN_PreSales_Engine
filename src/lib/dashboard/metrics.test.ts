@@ -10,6 +10,7 @@ import {
   formatDays,
   formatPercent,
   formHealthFlag,
+  parseForms,
   parsePeriod,
   parseTab,
   periodRange,
@@ -66,6 +67,16 @@ describe("tabs", () => {
     expect(dashboardHref("7d", "overview")).toBe("/admin?period=7d");
     expect(dashboardHref("30d", "attention")).toBe("/admin?tab=attention");
     expect(dashboardHref("all", "activity")).toBe("/admin?tab=activity&period=all");
+    const a = "aaaaaaaa-0000-0000-0000-000000000001";
+    const b = "bbbbbbbb-0000-0000-0000-000000000002";
+    expect(dashboardHref("30d", "overview", [a, b])).toBe(`/admin?forms=${a}%2C${b}`);
+  });
+
+  it("reads the form filter from the query string and drops anything that is not a form id", () => {
+    const a = "aaaaaaaa-0000-0000-0000-000000000001";
+    expect(parseForms(`${a},not-an-id,${a}`)).toEqual([a]);
+    expect(parseForms(undefined)).toEqual([]);
+    expect(parseForms([a, a.toUpperCase()])).toEqual([a]);
   });
 });
 

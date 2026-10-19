@@ -4,7 +4,7 @@ import { loadSubmissions } from "./submissionsData";
 function fakeSupabase() {
   const calls: Record<string, unknown[]> = {};
   const chain: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "order", "range", "or", "in"]) {
+  for (const m of ["select", "eq", "neq", "order", "range", "or", "in"]) {
     chain[m] = (...args: unknown[]) => {
       (calls[m] ??= []).push(args);
       return chain;
@@ -20,6 +20,12 @@ describe("loadSubmissions status filter", () => {
     await loadSubmissions(supabase, { formId: null, status: "new" });
     expect(calls.or).toEqual([["status.is.null,status.eq.new"]]);
     expect(calls.eq).toEqual([["completed", true]]);
+  });
+
+  it("leaves out the system record that holds leads added by hand", async () => {
+    const { supabase, calls } = fakeSupabase();
+    await loadSubmissions(supabase, { formId: null, status: null });
+    expect(calls.neq).toEqual([["forms.slug", "manual-entry"]]);
   });
 
   it("matches other statuses exactly", async () => {

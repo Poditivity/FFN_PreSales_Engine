@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Badge, Button, EmptyState } from "@/components/ffn";
 import { FormDeleteButton } from "./FormDeleteButton";
@@ -15,6 +16,7 @@ export default async function AdminFormsPage() {
   const { data: forms, error } = await supabase
     .from("forms")
     .select("id, title, slug, status, created_at")
+    .neq("slug", MANUAL_FORM_SLUG)
     .order("created_at", { ascending: false });
 
   // A form with submissions cannot be deleted, so the list needs each count.

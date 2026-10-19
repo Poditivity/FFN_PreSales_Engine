@@ -38,7 +38,7 @@ export interface HubTestimonialItem {
   video_link: string | null;
   // startup_name and is_co_founder come from hub-hydrate. An older deployment
   // does not send them, so the page falls back to the founders block.
-  founder: { id: string; name: string; startup_name?: string | null; startup_logo_url?: string | null; is_co_founder?: boolean } | null;
+  founder: { id: string; name: string; photo_url?: string | null; startup_name?: string | null; startup_logo_url?: string | null; is_co_founder?: boolean } | null;
 }
 
 export interface HubMentorItem {

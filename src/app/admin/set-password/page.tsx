@@ -52,7 +52,7 @@ export default function SetPasswordPage() {
       setError(error.message);
       return;
     }
-    router.push("/admin/forms");
+    router.push("/admin");
     router.refresh();
   }
 

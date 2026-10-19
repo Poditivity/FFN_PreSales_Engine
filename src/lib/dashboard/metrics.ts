@@ -25,11 +25,20 @@ export function parseTab(raw: unknown): DashboardTab {
   return DASHBOARD_TABS.includes(raw as DashboardTab) ? (raw as DashboardTab) : "overview";
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The forms chosen in the filter, from a comma separated query value. Anything that is not a form id is dropped. */
+export function parseForms(raw: unknown): string[] {
+  const text = Array.isArray(raw) ? raw.join(",") : typeof raw === "string" ? raw : "";
+  return [...new Set(text.split(",").map((s) => s.trim().toLowerCase()).filter((s) => UUID.test(s)))];
+}
+
 /** /admin with only the non-default choices in the query string, so links stay short and shareable. */
-export function dashboardHref(period: PeriodId, tab: DashboardTab): string {
+export function dashboardHref(period: PeriodId, tab: DashboardTab, forms: string[] = []): string {
   const params = new URLSearchParams();
   if (tab !== "overview") params.set("tab", tab);
   if (period !== DEFAULT_PERIOD) params.set("period", period);
+  if (forms.length > 0) params.set("forms", forms.join(","));
   const query = params.toString();
   return query ? `/admin?${query}` : "/admin";
 }

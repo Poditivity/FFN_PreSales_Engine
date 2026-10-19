@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { extractFields } from "@/lib/forms/flowModel";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { computeSubmissionInsights, orderedFields, resolveIdentity, type FieldTiming } from "@/lib/forms/insights";
 import type { Lead } from "@/lib/leads/schema";
 import { LeadsBoard, type BoardLead } from "./LeadsBoard";
@@ -90,7 +91,15 @@ export default async function LeadsPage() {
     };
   });
 
-  const programs = Array.from(new Map(boardLeads.map((l) => [l.programId, l.programTitle])).entries())
+  const { data: formRows } = await supabase.from("forms").select("id, title, slug, schema").order("title");
+  const allForms = (formRows ?? []) as { id: string; title: string; slug: string; schema: unknown }[];
+  // The forms a lead can be added on by hand. The system form that holds "No form" leads is not one of them.
+  const manualForms = allForms.filter((f) => f.slug !== MANUAL_FORM_SLUG);
+
+  // The Form filter lists every form, including "Manual leads", not only the ones that already have leads.
+  const programs = Array.from(
+    new Map([...allForms.map((f) => [f.id, f.title] as const), ...boardLeads.map((l) => [l.programId, l.programTitle] as const)]).entries(),
+  )
     .map(([id, title]) => ({ id, title }))
     .sort((a, b) => a.title.localeCompare(b.title));
 
@@ -103,7 +112,7 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <LeadsBoard initialLeads={boardLeads} programs={programs} owners={owners} loadError={loadError} />
+      <LeadsBoard initialLeads={boardLeads} programs={programs} owners={owners} manualForms={manualForms} loadError={loadError} />
     </div>
   );
 }

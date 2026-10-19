@@ -16,6 +16,8 @@ export { Field } from "./Field";
 export type { FieldProps } from "./Field";
 export { Input } from "./Input";
 export type { InputProps } from "./Input";
+export { MultiSelect } from "./MultiSelect";
+export type { MultiSelectProps } from "./MultiSelect";
 export { Select } from "./Select";
 export type { SelectOption, SelectProps } from "./Select";
 export { STAGES, StageBadge, stageDef } from "./StageBadge";

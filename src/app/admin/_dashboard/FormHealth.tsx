@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { Badge, Card } from "@/components/ffn";
 import { formatDuration } from "@/lib/forms/insights";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { formatCount, formatPercent, formHealthFlag, periodPhrase, ratio } from "@/lib/dashboard/metrics";
 import type { DashboardOverview, PeriodId } from "@/lib/dashboard/types";
 import { Skeleton } from "./ui";
 
 export function FormHealthCard({ overview, period }: { overview: DashboardOverview | undefined; period: PeriodId }) {
   // Forms with no traffic in the window are noise here; the Forms page lists them all.
-  const forms = (overview?.forms ?? []).filter((f) => f.starts > 0 || f.applications > 0);
+  const forms = (overview?.forms ?? []).filter((f) => f.slug !== MANUAL_FORM_SLUG && (f.starts > 0 || f.applications > 0));
 
   return (
     <Card title="Form health" subtitle={`How each form performs ${periodPhrase(period)}.`} flush>

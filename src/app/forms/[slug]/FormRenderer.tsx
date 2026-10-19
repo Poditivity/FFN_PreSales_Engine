@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button } from "@/components/ffn";
 import { ConsentBox } from "@/components/forms/ConsentBox";
 import { FieldRenderer } from "@/components/forms/FieldRenderer";
+import { FormText } from "@/components/forms/FormText";
 import { CONSENT_KEY, consentRecord, DEFAULT_PUBLIC_SETTINGS, type PublicFormSettings } from "@/lib/forms/consent";
 import { uploadFormFile } from "@/lib/forms/fileUpload";
 import { trackFormComplete, trackFormDrop, trackFormStart } from "@/lib/forms/analytics";
@@ -15,9 +16,11 @@ import {
   isChoiceField,
   nextNodeId,
   normalizeSchema,
+  resolveStep,
   type FlowNode,
 } from "@/lib/forms/flowModel";
-import { fileConfigOf, isEmailField, validateField } from "@/lib/forms/formLogic";
+import { fillName } from "@/lib/forms/linkText";
+import { fileConfigOf, isEmailField, isInputField, validateField, type FormField } from "@/lib/forms/formLogic";
 import type { Form } from "@/lib/forms/schema";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { useFormSubmission } from "@/lib/forms/useFormSubmission";
@@ -54,9 +57,12 @@ export function FormRenderer({
   const totalSteps = useMemo(() => estimateSteps(nodes, edges), [nodes, edges]);
 
   const tracker = useFormSubmission(preview ? null : form.id);
-  const [currentId, setCurrentId] = useState<string | null>(() => entryNodeId(nodes, edges));
+  // A section heading is shown above the question that follows it, so the first page can start with some.
+  const [start] = useState(() => resolveStep(nodes, edges, entryNodeId(nodes, edges)));
+  const [currentId, setCurrentId] = useState<string | null>(start.id);
+  const [intro, setIntro] = useState<FormField[]>(start.sections);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<{ id: string; sections: FormField[] }[]>([]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -147,7 +153,13 @@ export function FormRenderer({
         }
       }
 
-      const message = endNode?.data.message || form.thank_you_message || "Thank you for your submission!";
+      // {name} is the answer to the form's Name question, if it has one.
+      const nameFieldIds = nodes.filter((n) => n.data.field?.type === "name").map((n) => n.data.field!.id);
+      const applicantName = nameFieldIds.map((id) => answers[id]).find((v) => typeof v === "string" && v.trim()) as string | undefined;
+      const message = fillName(
+        endNode?.data.message || form.thank_you_message || "Thank you for your submission!",
+        applicantName ?? "",
+      );
       const redirect = endNode?.data.redirect_url || (form.post_submit_action === "redirect" ? form.redirect_url ?? "" : "");
       setResult({ message, redirect });
     } catch (err) {
@@ -165,6 +177,7 @@ export function FormRenderer({
 
   async function handleNext() {
     if (!field || !current) return;
+    if (!isInputField(field.type)) begin();
     const err = validateField(field, answers[field.id]);
     if (err) {
       setError(err);
@@ -180,8 +193,10 @@ export function FormRenderer({
       await finish(node);
       return;
     }
-    setHistory((h) => [...h, currentId!]);
-    setCurrentId(nid);
+    const step = resolveStep(nodes, edges, nid);
+    setHistory((h) => [...h, { id: currentId!, sections: intro }]);
+    setCurrentId(step.id);
+    setIntro(step.sections);
     setError("");
     setConsentPrompted(false);
   }
@@ -190,7 +205,8 @@ export function FormRenderer({
     setHistory((h) => {
       if (h.length === 0) return h;
       const prev = h[h.length - 1];
-      setCurrentId(prev);
+      setCurrentId(prev.id);
+      setIntro(prev.sections);
       setError("");
       setConsentPrompted(false);
       return h.slice(0, -1);
@@ -207,9 +223,9 @@ export function FormRenderer({
       >
         <Image src="/logos/ffn-lockup-on-light.png" alt="Founders First Network" width={120} height={120} />
         <h1 className="display-md">Thank you</h1>
-        <p className="body-lg" style={{ color: "var(--ink-muted)" }} data-testid="submission-confirmation">
-          {result.message}
-        </p>
+        <div data-testid="submission-confirmation">
+          <FormText text={result.message} className="body-lg" style={{ color: "var(--ink-muted)" }} />
+        </div>
       </main>
     );
   }
@@ -229,17 +245,13 @@ export function FormRenderer({
       <div className="flex flex-col items-start" style={{ gap: "var(--space-6)", marginBottom: "var(--space-8)" }}>
         <Image src="/logos/ffn-lockup-on-light.png" alt="Founders First Network" width={120} height={120} />
         <h1 className="display-md">{form.title}</h1>
-        {form.description && (
-          <p className="body-lg" style={{ color: "var(--ink-muted)" }}>
-            {form.description}
-          </p>
-        )}
+        {form.description && <FormText text={form.description} className="body-lg" style={{ color: "var(--ink-muted)" }} />}
       </div>
 
       <div style={{ marginBottom: "var(--space-6)" }}>
         <div className="flex items-baseline justify-between" style={{ marginBottom: "var(--space-2)" }}>
           <span className="eyebrow" style={{ color: "var(--ink-muted)" }}>
-            Question {history.length + 1}
+            {isInputField(field.type) ? "Question" : "Step"} {history.length + 1}
           </span>
           <span className="eyebrow" style={{ color: "var(--brand)" }}>
             {progress}%
@@ -274,6 +286,9 @@ export function FormRenderer({
           if (!submitting && !uploading) void handleNext();
         }}
       >
+        {intro.map((section) => (
+          <FieldRenderer key={section.id} field={section} value={undefined} onChange={() => {}} />
+        ))}
         <FieldRenderer
           field={field}
           value={answers[field.id]}
@@ -337,7 +352,7 @@ export function FormRenderer({
             <span />
           )}
           <Button size="lg" type="submit" data-testid="submit-button" loading={submitting} disabled={uploading}>
-            {showConsent ? "Submit" : "Next"}
+            {showConsent ? "Submit" : isInputField(field.type) ? "Next" : "Continue"}
           </Button>
         </div>
       </form>

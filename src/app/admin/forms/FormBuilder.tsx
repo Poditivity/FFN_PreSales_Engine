@@ -21,7 +21,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import { Alert, Button, Input, Select, Textarea } from "@/components/ffn";
 import { FormRenderer } from "@/app/forms/[slug]/FormRenderer";
-import { EdgeEditor, EmptyPanel, EndEditor, NodeFieldEditor } from "./flowEditorPanel";
+import { EdgeEditor, EmptyPanel, EndEditor, NAME_HINT, NodeFieldEditor } from "./flowEditorPanel";
 import {
   edgeTypes,
   nodeTypes,
@@ -37,7 +37,7 @@ import {
   type FlowEdgeModel,
   type FlowNode,
 } from "@/lib/forms/flowModel";
-import { FIELD_TYPES } from "@/lib/forms/formLogic";
+import { FIELD_TYPES, isDisplayType } from "@/lib/forms/formLogic";
 import type { Form, FormStatus, PostSubmitAction } from "@/lib/forms/schema";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { FormDeleteButton } from "./FormDeleteButton";
@@ -195,7 +195,25 @@ function Canvas({
         {(!compact || paletteOpen) && (
           <>
             <div className="flex flex-wrap" style={{ gap: "var(--space-1)", marginTop: "var(--space-2)" }}>
-              {FIELD_TYPES.filter((f) => f.type !== "section_header").map((ft) => (
+              {FIELD_TYPES.filter((f) => !isDisplayType(f.type)).map((ft) => (
+                <Button
+                  key={ft.type}
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    addQuestion(ft.type, place());
+                    setPaletteOpen(false);
+                  }}
+                >
+                  {ft.label}
+                </Button>
+              ))}
+            </div>
+            <div className="eyebrow" style={{ color: "var(--ink-muted)", marginTop: "var(--space-3)" }}>
+              Add content
+            </div>
+            <div className="flex flex-wrap" style={{ gap: "var(--space-1)", marginTop: "var(--space-2)" }}>
+              {FIELD_TYPES.filter((f) => isDisplayType(f.type)).map((ft) => (
                 <Button
                   key={ft.type}
                   variant="secondary"
@@ -364,6 +382,7 @@ function FormBuilderInner({ initialForm, submissionCount }: { initialForm?: Form
     setSelected(null);
   };
 
+  const hasName = nodes.some((n) => n.type === "question" && n.data.field?.type === "name");
   const selNode = selected?.kind === "node" ? nodes.find((n) => n.id === selected.id) ?? null : null;
   const selEdge = selected?.kind === "edge" ? edges.find((e) => e.id === selected.id) ?? null : null;
 
@@ -556,7 +575,7 @@ function FormBuilderInner({ initialForm, submissionCount }: { initialForm?: Form
               <NodeFieldEditor node={selNode} onChange={updateNode} onDelete={() => deleteNode(selNode.id)} />
             )}
             {selNode && selNode.type === "end" && (
-              <EndEditor node={selNode} onChange={updateNode} onDelete={() => deleteNode(selNode.id)} />
+              <EndEditor node={selNode} onChange={updateNode} onDelete={() => deleteNode(selNode.id)} hasName={hasName} />
             )}
             {selEdge && <EdgeEditor edge={selEdge} onDelete={() => deleteEdge(selEdge.id)} />}
             {!selNode && !selEdge && <EmptyPanel />}
@@ -585,6 +604,7 @@ function FormBuilderInner({ initialForm, submissionCount }: { initialForm?: Form
           <Textarea
             rows={2}
             label="Default thank-you message"
+            hint={hasName ? NAME_HINT : undefined}
             value={form.thank_you_message}
             onChange={(e) => setFormField({ thank_you_message: e.target.value })}
           />

@@ -1,4 +1,4 @@
-import type { FieldType, FormField } from "./formLogic";
+import { isInputField, type FieldType, type FormField } from "./formLogic";
 import { normalizeSchema } from "./flowModel";
 
 // Ported from build-fellowship's app/src/lib/submissionInsights.js (the real
@@ -242,13 +242,13 @@ export function orderedFields(schema: unknown): FormField[] {
     if (seen.has(id)) continue;
     seen.add(id);
     const node = byId.get(id);
-    if (node?.type === "question" && node.data.field) ordered.push(node.data.field);
+    if (node?.type === "question" && node.data.field && isInputField(node.data.field.type)) ordered.push(node.data.field);
     const next = outgoing.get(id) ?? [];
     for (let i = next.length - 1; i >= 0; i--) stack.push(next[i]);
   }
 
   nodes.forEach((n) => {
-    if (n.type === "question" && n.data.field && !seen.has(n.id)) ordered.push(n.data.field);
+    if (n.type === "question" && n.data.field && isInputField(n.data.field.type) && !seen.has(n.id)) ordered.push(n.data.field);
   });
 
   return ordered;
@@ -286,9 +286,9 @@ export function resolveIdentity(data: Record<string, unknown>, fields: FormField
     return field ? valueOf(field) : "";
   };
 
-  const nameField = fields.find(
-    (f) => PERSON_NAME.test(f.label || "") && !NOT_A_PERSON.test(f.label || "") && looksLikeName(data[f.id]),
-  );
+  const nameField =
+    fields.find((f) => f.type === "name" && looksLikeName(data[f.id])) ??
+    fields.find((f) => PERSON_NAME.test(f.label || "") && !NOT_A_PERSON.test(f.label || "") && looksLikeName(data[f.id]));
   let name = nameField ? valueOf(nameField) : "";
 
   const email =

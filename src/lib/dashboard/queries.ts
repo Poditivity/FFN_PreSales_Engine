@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { extractFields } from "@/lib/forms/flowModel";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { resolveIdentity } from "@/lib/forms/insights";
 import type { LeadWithSubmission } from "@/lib/leads/schema";
 import { periodRange } from "./metrics";
@@ -14,23 +15,32 @@ function unwrap<T>(result: { data: unknown; error: { message: string } | null })
   return result.data as T;
 }
 
-export async function fetchOverview(supabase: SupabaseClient, period: PeriodId, now: Date, tz: string) {
+// The form filter is only sent when forms are chosen, so with no filter these
+// calls are exactly the ones the database functions have always accepted.
+const formArg = (formIds: string[]) => (formIds.length > 0 ? { p_form_ids: formIds } : {});
+
+export async function fetchOverview(supabase: SupabaseClient, period: PeriodId, now: Date, tz: string, formIds: string[] = []) {
   const { from, to } = periodRange(period, now);
   return unwrap<DashboardOverview>(
-    await supabase.rpc("dashboard_overview", { p_from: from?.toISOString() ?? null, p_to: to.toISOString(), p_tz: tz }),
+    await supabase.rpc("dashboard_overview", {
+      p_from: from?.toISOString() ?? null,
+      p_to: to.toISOString(),
+      p_tz: tz,
+      ...formArg(formIds),
+    }),
   );
 }
 
-export async function fetchAttention(supabase: SupabaseClient) {
-  return unwrap<DashboardAttention>(await supabase.rpc("dashboard_attention"));
+export async function fetchAttention(supabase: SupabaseClient, formIds: string[] = []) {
+  return unwrap<DashboardAttention>(await supabase.rpc("dashboard_attention", formArg(formIds)));
 }
 
-export async function fetchLive(supabase: SupabaseClient) {
-  return unwrap<LiveHub[]>(await supabase.rpc("dashboard_live"));
+export async function fetchLive(supabase: SupabaseClient, formIds: string[] = []) {
+  return unwrap<LiveHub[]>(await supabase.rpc("dashboard_live", formArg(formIds)));
 }
 
-export async function fetchActivity(supabase: SupabaseClient, limit = 20) {
-  return unwrap<ActivityEvent[]>(await supabase.rpc("dashboard_activity", { p_limit: limit }));
+export async function fetchActivity(supabase: SupabaseClient, limit = 20, formIds: string[] = []) {
+  return unwrap<ActivityEvent[]>(await supabase.rpc("dashboard_activity", { p_limit: limit, ...formArg(formIds) }));
 }
 
 export interface LeadName {
@@ -101,7 +111,7 @@ export async function fetchSearchIndex(supabase: SupabaseClient): Promise<Search
       .limit(1000)
       .returns<LeadWithSubmission[]>(),
     supabase.from("hubs").select("id, lead_id, applicant_name, status").is("lead_id", null).limit(500),
-    supabase.from("forms").select("id, title, status").order("created_at", { ascending: false }),
+    supabase.from("forms").select("id, title, status").neq("slug", MANUAL_FORM_SLUG).order("created_at", { ascending: false }),
   ]);
 
   const entries: SearchEntry[] = [];

@@ -219,13 +219,11 @@ export function founderCredit(
 
 function QuoteCard({
   item,
-  lead,
   founders,
   onView,
   onVideo,
 }: {
   item: HubTestimonialItem;
-  lead: boolean;
   founders: HubFounderItem[];
   onView: (id: string) => void;
   onVideo: (id: string) => void;
@@ -234,10 +232,10 @@ function QuoteCard({
   const founder = item.founder;
   const logo = founder ? (founder.startup_logo_url ?? founders.find((f) => f.id === founder.id)?.startup_logo_url ?? null) : null;
   return (
-    <figure ref={ref} className={`tm-card${lead ? " tm-card--lead" : ""}`}>
+    <figure ref={ref} className="tm-card">
       {item.testimonial_quote && <blockquote className="tm-quote">{item.testimonial_quote}</blockquote>}
       <figcaption className="tm-by">
-        {founder && <Portrait name={founder.name} src={founders.find((f) => f.id === founder.id)?.photo_url} size="md" />}
+        {founder && <Portrait name={founder.name} src={founder.photo_url ?? founders.find((f) => f.id === founder.id)?.photo_url} size="md" />}
         <div>
           {founder && <p className="tm-name">{founder.name}</p>}
           {founder && (
@@ -281,8 +279,8 @@ export function TestimonialsBlock({
     <Section id="testimonials">
       <SectionHead eyebrow="In their words" title={title || "Testimonials"} subtitle={subtitle} />
       <div className="hub-grid hub-grid--2">
-        {shown.map((t, i) => (
-          <QuoteCard key={t.id} item={t} lead={i === 0 && shown.length > 1} founders={founders} onView={onView} onVideo={onVideo} />
+        {shown.map((t) => (
+          <QuoteCard key={t.id} item={t} founders={founders} onView={onView} onVideo={onVideo} />
         ))}
       </div>
     </Section>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { normalizePublicSettings } from "@/lib/forms/consent";
+import { MANUAL_FORM_SLUG } from "@/lib/forms/manualForm";
 import { formSchema } from "@/lib/forms/schema";
 import { Alert } from "@/components/ffn";
 import { FormRenderer } from "@/app/forms/[slug]/FormRenderer";
@@ -15,7 +16,7 @@ export default async function PreviewFormPage({
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.from("forms").select("*").eq("id", id).maybeSingle();
 
-  if (error || !data) notFound();
+  if (error || !data || data.slug === MANUAL_FORM_SLUG) notFound();
 
   const form = formSchema.parse(data);
   const { data: settingsRow } = await supabase.rpc("public_form_settings");

@@ -202,7 +202,7 @@ Deno.serve(async (req: Request) => {
 
   const emailField = fields.find((f) => f.type === "email");
   const submitterEmail = emailField ? String(answers[emailField.id] ?? "").trim() : "";
-  const nameField = fields.find((f) => f.type === "text" && /name/i.test(f.label ?? ""));
+  const nameField = fields.find((f) => f.type === "name" || (f.type === "text" && /name/i.test(f.label ?? "")));
   const submitterName = nameField ? String(answers[nameField.id] ?? "").trim() : "";
 
   const submitterPhone = resolveSubmissionContact(answers, fields).phone;
