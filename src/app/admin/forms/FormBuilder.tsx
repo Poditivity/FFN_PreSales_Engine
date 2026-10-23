@@ -27,12 +27,14 @@ import {
   nodeTypes,
 } from "@/components/forms/flowNodes";
 import {
+  brokenBranches,
   makeEdge,
   makeEndNode,
   makeQuestionNode,
   makeStartNode,
   normalizeSchema,
   serializeGraph,
+  syncOptionEdges,
   type EdgeData,
   type FlowEdgeModel,
   type FlowNode,
@@ -371,7 +373,13 @@ function FormBuilderInner({ initialForm, submissionCount }: { initialForm?: Form
     setSelected({ kind: "node", id: node.id });
   }
 
-  const updateNode = (updated: FlowNode) => setNodes((ns) => ns.map((n) => (n.id === updated.id ? updated : n)));
+  const updateNode = (updated: FlowNode) => {
+    // A branch is drawn from an option, so renaming or removing the option carries its branch along.
+    const before = nodes.find((n) => n.id === updated.id)?.data.field?.options ?? [];
+    const after = updated.data.field?.options ?? [];
+    if (before !== after) setEdges((es) => syncOptionEdges(es, updated.id, before, after));
+    setNodes((ns) => ns.map((n) => (n.id === updated.id ? updated : n)));
+  };
   const deleteNode = (nodeId: string) => {
     setNodes((ns) => ns.filter((n) => n.id !== nodeId));
     setEdges((es) => es.filter((e) => e.source !== nodeId && e.target !== nodeId));
@@ -393,6 +401,12 @@ function FormBuilderInner({ initialForm, submissionCount }: { initialForm?: Form
     if (!form.title.trim()) {
       setTitleMissing(true);
       setError("Give the form a title before saving.");
+      return false;
+    }
+    // A branch for an option that no longer exists would leave anyone who picks that answer stuck.
+    const broken = brokenBranches(nodes, edges);
+    if (broken.length > 0) {
+      setError(broken.join(" "));
       return false;
     }
     setSaving(true);

@@ -5,7 +5,7 @@ import { Alert, Button, Modal, Select } from "@/components/ffn";
 import { FieldRenderer } from "@/components/forms/FieldRenderer";
 import { uploadFormFile } from "@/lib/forms/fileUpload";
 import { fileConfigOf } from "@/lib/forms/formLogic";
-import { answerProblems, createManualLead, MANUAL_ENTRY_FIELDS, pickAnswers, questionsFor } from "@/lib/leads/manualLead";
+import { answerProblems, createManualLead, MANUAL_ENTRY_FIELDS, pickAnswers, questionsFor, routeProblems } from "@/lib/leads/manualLead";
 
 export interface ManualLeadForm {
   id: string;
@@ -49,7 +49,7 @@ export function ManualLeadModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (saving || uploading > 0) return;
-    const found = answerProblems(fields, answers);
+    const found = { ...answerProblems(fields, answers), ...(form ? routeProblems(form.schema, answers) : {}) };
     setProblems(found);
     if (Object.keys(found).length > 0) {
       setError("Check the highlighted answers.");

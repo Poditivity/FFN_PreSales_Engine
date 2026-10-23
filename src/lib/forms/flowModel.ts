@@ -134,9 +134,15 @@ export function extractFields(schema: unknown): FormField[] {
 
 // ---- Runtime traversal ------------------------------------------------------
 
+/** Option text as branches compare it: case and surrounding spaces don't matter. */
+export function normalizeOption(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 export function matchesOption(answer: unknown, value: unknown): boolean {
-  if (Array.isArray(answer)) return answer.map(String).includes(String(value));
-  return String(answer ?? "") === String(value ?? "");
+  const target = normalizeOption(value);
+  if (Array.isArray(answer)) return answer.some((a) => normalizeOption(a) === target);
+  return normalizeOption(answer) === target;
 }
 
 export function getNode(nodes: FlowNode[], id: string | null): FlowNode | null {
@@ -147,8 +153,21 @@ export function outgoingEdges(edges: FlowEdgeModel[], nodeId: string): FlowEdgeM
   return edges.filter((e) => e.source === nodeId);
 }
 
-/** Given the current node + its answer, return the next node id (or null = finish). */
-export function nextNodeId(node: FlowNode, answer: unknown, edges: FlowEdgeModel[]): string | null {
+/**
+ * nextNodeId's result when a choice question is answered but no branch matches the answer
+ * and the question has no "any other answer" branch. The flow cannot go on, and it must not
+ * be treated as the end of the form: that would save a finished submission with every later
+ * answer missing.
+ */
+export const UNROUTED = Symbol("unrouted");
+
+function hasAnswer(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+/** Given the current node + its answer, return the next node id (null = finish, UNROUTED = stuck). */
+export function nextNodeId(node: FlowNode, answer: unknown, edges: FlowEdgeModel[]): string | null | typeof UNROUTED {
   const outs = outgoingEdges(edges, node.id);
   if (outs.length === 0) return null;
 
@@ -159,9 +178,53 @@ export function nextNodeId(node: FlowNode, answer: unknown, edges: FlowEdgeModel
     const elseEdge = outs.find((e) => e.data.kind === "else");
     if (elseEdge) return elseEdge.target;
     const always = outs.find((e) => e.data.kind === "always");
-    return always ? always.target : null;
+    if (always) return always.target;
+    // A skipped optional question still ends the flow, as before.
+    return hasAnswer(answer) ? UNROUTED : null;
   }
   return outs[0].target;
+}
+
+// ---- Keeping branches in step with options (builder) ------------------------
+
+/**
+ * Edges after a choice question's options change from `before` to `after`. A renamed option
+ * takes its branch with it; a removed option's branch is removed.
+ */
+export function syncOptionEdges(edges: FlowEdgeModel[], nodeId: string, before: string[], after: string[]): FlowEdgeModel[] {
+  const isOwnOption = (e: FlowEdgeModel) => e.source === nodeId && e.data.kind === "option";
+  if (before.length === after.length) {
+    let next = edges;
+    before.forEach((old, idx) => {
+      const renamed = after[idx];
+      if (old === renamed) return;
+      // When another option still has the old text, the branch belongs to that one.
+      if (after.some((o, j) => j !== idx && normalizeOption(o) === normalizeOption(old))) return;
+      next = next.map((e) =>
+        isOwnOption(e) && normalizeOption(e.data.value) === normalizeOption(old)
+          ? { ...e, sourceHandle: `opt:${renamed}`, data: { ...e.data, value: renamed } }
+          : e,
+      );
+    });
+    return next;
+  }
+  return edges.filter((e) => !isOwnOption(e) || after.some((o) => matchesOption(o, e.data.value)));
+}
+
+/** One line per branch that points at an option its question no longer has. Empty when all is well. */
+export function brokenBranches(nodes: FlowNode[], edges: FlowEdgeModel[]): string[] {
+  const problems: string[] = [];
+  for (const e of edges) {
+    if (e.data.kind !== "option") continue;
+    const field = getNode(nodes, e.source)?.data.field;
+    if (!field) continue;
+    if ((field.options ?? []).some((o) => matchesOption(o, e.data.value))) continue;
+    problems.push(
+      `"${field.label.trim() || "Untitled question"}" has a branch for "${e.data.value ?? ""}", which is not one of its options. ` +
+        `Add the option "${e.data.value ?? ""}" back, then delete or redraw that branch.`,
+    );
+  }
+  return problems;
 }
 
 /** Entry node = target of the start node's edge (fallback: first question node). */
@@ -202,7 +265,9 @@ export function resolveStep(
     const node = getNode(nodes, id);
     if (!node || !isAttachedSection(nodes, edges, node)) break;
     sections.push(node.data.field as FormField);
-    id = nextNodeId(node, undefined, edges);
+    // A section is never a choice question, so it is never left without a route.
+    const next = nextNodeId(node, undefined, edges);
+    id = next === UNROUTED ? null : next;
   }
   return { id, sections };
 }
