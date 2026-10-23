@@ -120,7 +120,7 @@ export function FormRenderer({
     setConsentPrompted(false);
   }
 
-  function resolveNext(answer: unknown) {
+  function resolveNext(answer: unknown): { nid: string | null | typeof UNROUTED; node: FlowNode | null } {
     if (!current) return { nid: null, node: null };
     const nid = nextNodeId(current, answer, edges);
     if (nid === UNROUTED) return { nid, node: null };
