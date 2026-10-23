@@ -1,13 +1,9 @@
-import { entryNodeId, getNode, isChoiceField, nextNodeId, normalizeSchema } from "@/lib/forms/flowModel";
+import { entryNodeId, getNode, isChoiceField, nextNodeId, normalizeSchema, UNROUTED } from "@/lib/forms/flowModel";
 import { isInputField, validateField, type FormField } from "@/lib/forms/formLogic";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
-/**
- * The questions to ask for a manual lead on a given form: the ones an applicant would
- * meet, following the form's branches by the answers given so far. A choice question
- * that has no answer yet ends the list, because nobody knows where it leads.
- */
-export function questionsFor(schema: unknown, answers: Record<string, unknown>): FormField[] {
+/** The questions met so far, and the one whose answer has no next step in the form, if any. */
+function walk(schema: unknown, answers: Record<string, unknown>): { fields: FormField[]; unrouted: string | null } {
   const { nodes, edges } = normalizeSchema(schema);
   const fields: FormField[] = [];
   const seen = new Set<string>();
@@ -23,9 +19,26 @@ export function questionsFor(schema: unknown, answers: Record<string, unknown>):
       const unanswered = Array.isArray(answer) ? answer.length === 0 : answer === undefined || answer === null || answer === "";
       if (isChoiceField(field.type) && unanswered) break;
     }
-    id = nextNodeId(node, answers[field?.id ?? ""], edges);
+    const next = nextNodeId(node, answers[field?.id ?? ""], edges);
+    if (next === UNROUTED) return { fields, unrouted: field?.id ?? null };
+    id = next;
   }
-  return fields;
+  return { fields, unrouted: null };
+}
+
+/**
+ * The questions to ask for a manual lead on a given form: the ones an applicant would
+ * meet, following the form's branches by the answers given so far. A choice question
+ * that has no answer yet ends the list, because nobody knows where it leads.
+ */
+export function questionsFor(schema: unknown, answers: Record<string, unknown>): FormField[] {
+  return walk(schema, answers).fields;
+}
+
+/** The answer the form has no next step for, by field id, so the lead is not saved half-filled. */
+export function routeProblems(schema: unknown, answers: Record<string, unknown>): Record<string, string> {
+  const { unrouted } = walk(schema, answers);
+  return unrouted ? { [unrouted]: "The form has no next step for this answer. Fix its branches in the form builder first." } : {};
 }
 
 /** Each question's problem, by field id. Empty when every answer is acceptable. */

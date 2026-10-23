@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeEdge, makeEndNode, makeQuestionNode, makeStartNode, serializeGraph } from "@/lib/forms/flowModel";
-import { answerProblems, pickAnswers, questionsFor } from "./manualLead";
+import { answerProblems, pickAnswers, questionsFor, routeProblems } from "./manualLead";
 
 function branching() {
   const start = makeStartNode();
@@ -45,5 +45,14 @@ describe("answerProblems and pickAnswers", () => {
     const { schema, choice, idea, revenue } = branching();
     const answers = { [choice.id]: "Idea", [idea.id]: "An app", [revenue.id]: "100" };
     expect(pickAnswers(questionsFor(schema, answers), answers)).toEqual({ [choice.id]: "Idea", [idea.id]: "An app" });
+  });
+});
+
+describe("routeProblems", () => {
+  it("flags an answer the form has no next step for, instead of ending the list there", () => {
+    const { schema, choice } = branching();
+    choice.data.field = { ...choice.data.field!, options: ["Idea", "Revenue", "Exited"] };
+    expect(routeProblems(schema, { [choice.id]: "Idea" })).toEqual({});
+    expect(Object.keys(routeProblems(schema, { [choice.id]: "Exited" }))).toEqual([choice.id]);
   });
 });

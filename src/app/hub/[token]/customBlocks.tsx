@@ -45,7 +45,7 @@ export function CustomBlock({
   if (!body && !imageUrl) return null;
   return (
     <Section id={id}>
-      <SectionHead eyebrow="From us" title={title || "More from us"} subtitle={subtitle} />
+      <SectionHead title={title || "More from us"} subtitle={subtitle} />
       <div className={`cu-wrap${imageUrl && body ? " cu-wrap--image" : ""}`}>
         {(body || (buttonLabel && buttonUrl)) && (
           <div>
@@ -107,7 +107,7 @@ export function CollectionBlock({
   if (items.length === 0) return null;
   return (
     <Section id={id}>
-      <SectionHead eyebrow="Also for you" title={title || "More for you"} subtitle={subtitle} />
+      <SectionHead title={title || "More for you"} subtitle={subtitle} />
       <div className="hub-grid hub-grid--3">
         {items.map((item) => (
           <CollectionCard key={item.id} item={item} onView={onView} onLink={onLink} />

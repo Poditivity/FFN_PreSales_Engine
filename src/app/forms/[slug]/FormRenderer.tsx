@@ -17,6 +17,7 @@ import {
   nextNodeId,
   normalizeSchema,
   resolveStep,
+  UNROUTED,
   type FlowNode,
 } from "@/lib/forms/flowModel";
 import { fillName } from "@/lib/forms/linkText";
@@ -119,9 +120,10 @@ export function FormRenderer({
     setConsentPrompted(false);
   }
 
-  function resolveNext(answer: unknown) {
+  function resolveNext(answer: unknown): { nid: string | null | typeof UNROUTED; node: FlowNode | null } {
     if (!current) return { nid: null, node: null };
     const nid = nextNodeId(current, answer, edges);
+    if (nid === UNROUTED) return { nid, node: null };
     return { nid, node: getNode(nodes, nid) };
   }
 
@@ -132,7 +134,7 @@ export function FormRenderer({
   const routesToEnd = (() => {
     if (!current) return true;
     const { nid, node } = resolveNext(answers[field?.id ?? ""]);
-    return !nid || node?.type === "end";
+    return nid !== UNROUTED && (!nid || node?.type === "end");
   })();
   const nextIsTerminal = routesToEnd && !awaitingChoice;
   const showConsent = nextIsTerminal || consentPrompted;
@@ -184,6 +186,11 @@ export function FormRenderer({
       return;
     }
     const { nid, node } = resolveNext(answers[field.id]);
+    // The form has no next step for this answer. Stop here rather than submit it half-filled.
+    if (nid === UNROUTED) {
+      setError("This form cannot continue from this answer yet. Contact us and we will sort it out.");
+      return;
+    }
     if (!nid || node?.type === "end") {
       if (!consent) {
         setConsentPrompted(true);
