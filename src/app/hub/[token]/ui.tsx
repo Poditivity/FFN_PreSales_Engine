@@ -66,14 +66,12 @@ export interface BlockHeading {
   subtitle?: string | null;
 }
 
-/** The heading every section opens with: a small label, the title, and one supporting line. */
+/** The heading every section opens with: the title and one supporting line. */
 export function SectionHead({
-  eyebrow,
   title,
   subtitle,
   action,
 }: {
-  eyebrow: string;
   title: string;
   subtitle?: string | null;
   action?: ReactNode;
@@ -81,7 +79,6 @@ export function SectionHead({
   return (
     <div className="hub-head">
       <div>
-        <p className="hub-eyebrow">{eyebrow}</p>
         <h2 className="hub-h2">{title}</h2>
         {subtitle && <p className="hub-lede">{subtitle}</p>}
       </div>

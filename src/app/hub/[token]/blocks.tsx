@@ -41,7 +41,7 @@ export function FoundersBlock({
   if (items.length === 0) return null;
   return (
     <Section id="founders">
-      <SectionHead eyebrow="The founders" title={title || "Founders"} subtitle={subtitle || "Open a profile to read the whole story."} />
+      <SectionHead title={title || "Founders"} subtitle={subtitle || "Open a profile to read the whole story."} />
       <div className="hub-grid hub-grid--3">
         {items.map((f) => {
           const line = f.outcome || f.starting_problem || f.journey;
@@ -182,7 +182,7 @@ export function CaseStudiesBlock({
   const open = items.find((c) => c.id === openId) ?? null;
   return (
     <Section id="case_studies">
-      <SectionHead eyebrow="Real outcomes" title={title || "Case studies"} subtitle={subtitle || "Read each one here, without leaving the page."} />
+      <SectionHead title={title || "Case studies"} subtitle={subtitle || "Read each one here, without leaving the page."} />
       {open && <CaseStudyReader key={open.id} item={open} track={track} flush={flush} onClose={onClose} />}
       <div className="hub-grid hub-grid--3">
         {items.map((cs) => (
@@ -277,7 +277,7 @@ export function TestimonialsBlock({
   if (shown.length === 0) return null;
   return (
     <Section id="testimonials">
-      <SectionHead eyebrow="In their words" title={title || "Testimonials"} subtitle={subtitle} />
+      <SectionHead title={title || "Testimonials"} subtitle={subtitle} />
       <div className="hub-grid hub-grid--2">
         {shown.map((t) => (
           <QuoteCard key={t.id} item={t} founders={founders} onView={onView} onVideo={onVideo} />
@@ -330,7 +330,7 @@ export function MentorsBlock({
   if (items.length === 0) return null;
   return (
     <Section id="mentors">
-      <SectionHead eyebrow="The mentors" title={title || "Mentors"} subtitle={subtitle} />
+      <SectionHead title={title || "Mentors"} subtitle={subtitle} />
       <div className="hub-grid hub-grid--3">
         {items.map((m) => (
           <MentorCard key={m.id} item={m} onView={onView} onLink={onLink} />
@@ -349,7 +349,7 @@ export function FaqsBlock({
   if (items.length === 0) return null;
   return (
     <Section id="faqs">
-      <SectionHead eyebrow="Questions" title={title || "FAQs"} subtitle={subtitle} />
+      <SectionHead title={title || "FAQs"} subtitle={subtitle} />
       <div className="faq">
         {items.map((f) => (
           <details key={f.id} className="faq-item" onToggle={(e) => e.currentTarget.open && onView(f.id)}>
@@ -391,7 +391,7 @@ export function AboutBlock({ data, title, subtitle }: { data: HubAboutPayload } 
   ].filter((i): i is { label: string; value: string } => Boolean(i.value));
   return (
     <Section id="about">
-      <SectionHead eyebrow="About FFN" title={title || "About Founders First Network"} subtitle={subtitle || data.one_liner} />
+      <SectionHead title={title || "About Founders First Network"} subtitle={subtitle || data.one_liner} />
       {parts.length > 0 && (
         <div className="ab-cols">
           {parts.map((part, i) => (
@@ -424,7 +424,7 @@ export function WhoForBlock({ data, title, subtitle }: { data: HubWhoForPayload 
   if (!any) return null;
   return (
     <Section id="who_for">
-      <SectionHead eyebrow="Who it is for" title={title || "Who FFN is for"} subtitle={subtitle} />
+      <SectionHead title={title || "Who FFN is for"} subtitle={subtitle} />
       <div className="wf">
         <TagRow label="Founder stages" values={data.founder_stages_supported} />
         <TagRow label="Startup stages" values={data.startup_stages_supported} />
@@ -439,7 +439,7 @@ export function HelpsWithBlock({ data, title, subtitle }: { data: HubHelpsWithPa
   if (data.problems_addressed.length === 0) return null;
   return (
     <Section id="helps_with">
-      <SectionHead eyebrow="How we can help" title={title || "What FFN helps with"} subtitle={subtitle} />
+      <SectionHead title={title || "What FFN helps with"} subtitle={subtitle} />
       <ul className="hw-list">
         {data.problems_addressed.map((p) => (
           <li key={p}>
@@ -458,7 +458,7 @@ export function HowSupportsBlock({ data, title, subtitle }: { data: HubHowSuppor
   if (data.support_formats.length === 0) return null;
   return (
     <Section id="how_supports">
-      <SectionHead eyebrow="How we support founders" title={title || "How FFN supports founders"} subtitle={subtitle} />
+      <SectionHead title={title || "How FFN supports founders"} subtitle={subtitle} />
       <ol className="hs-grid">
         {data.support_formats.map((f, i) => (
           <li key={f} className="hs-item">
@@ -499,7 +499,7 @@ export function ProgramsBlock({
   if (items.length === 0) return null;
   return (
     <Section id="programs">
-      <SectionHead eyebrow="Programs" title={title || "Programs"} subtitle={subtitle} />
+      <SectionHead title={title || "Programs"} subtitle={subtitle} />
       <div className="hub-grid hub-grid--2">
         {items.map((p) => (
           <ProgramCard key={p.id} item={p} onView={onView} />
@@ -519,7 +519,7 @@ export function CredibilityBlock({ data, title, subtitle }: { data: HubCredibili
   if (stats.length === 0) return null;
   return (
     <Section id="credibility">
-      <SectionHead eyebrow="Credibility" title={title || "FFN credibility"} subtitle={subtitle} />
+      <SectionHead title={title || "FFN credibility"} subtitle={subtitle} />
       <dl className="cr-strip">
         {stats.map((s) => (
           <div key={s.label} className="cr-stat">
@@ -541,7 +541,7 @@ export function LinksBlock({
   if (items.length === 0) return null;
   return (
     <Section id="links">
-      <SectionHead eyebrow="Relevant links" title={title || "Relevant links"} subtitle={subtitle} />
+      <SectionHead title={title || "Relevant links"} subtitle={subtitle} />
       <div className="ln-list">
         {items.map((link) => (
           <a key={link.url} className="ln-row" href={link.url} target="_blank" rel="noreferrer" onClick={() => onLinkClick(link.label)}>
