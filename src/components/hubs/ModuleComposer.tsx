@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Plus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Plus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RichTextEditor } from "@/app/admin/messaging/RichTextEditor";
@@ -52,6 +52,23 @@ export function normalizeModules(modules: HubModule[]): HubModule[] {
     result.splice(at, 0, defaultModule(type));
   });
   return result;
+}
+
+/** Moves the section `fromKey` to just before or just after the section `toKey`. */
+export function reorderModules(
+  modules: HubModule[],
+  fromKey: string,
+  toKey: string,
+  place: "before" | "after",
+): HubModule[] {
+  if (fromKey === toKey) return modules;
+  const moving = modules.find((m) => moduleKey(m) === fromKey);
+  if (!moving) return modules;
+  const rest = modules.filter((m) => moduleKey(m) !== fromKey);
+  const target = rest.findIndex((m) => moduleKey(m) === toKey);
+  if (target === -1) return modules;
+  rest.splice(place === "before" ? target : target + 1, 0, moving);
+  return rest;
 }
 
 const KIND_OPTIONS: { value: RepeatableBlockType; label: string }[] = [
@@ -184,6 +201,21 @@ export function ModuleComposer({
     onChange(next);
   }
 
+  // Drag and drop: the grip is the only thing that starts a drag, so text boxes
+  // inside an open section still select text normally.
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<{ key: string; place: "before" | "after" } | null>(null);
+
+  function endDrag() {
+    setDragKey(null);
+    setDropAt(null);
+  }
+
+  function drop() {
+    if (dragKey && dropAt) onChange(reorderModules(modules, dragKey, dropAt.key, dropAt.place));
+    endDrag();
+  }
+
   function remove(key: string) {
     onChange(modules.filter((m) => moduleKey(m) !== key));
     if (openKey === key) setOpenKey(null);
@@ -199,7 +231,7 @@ export function ModuleComposer({
   return (
     <div className="flex flex-col" style={{ gap: "var(--space-3)" }}>
       <p className="body-sm" style={{ color: "var(--ink-muted)", margin: 0 }}>
-        Sections appear on the hub in this order. Use the arrows to move one. Add your own at the bottom.
+        Sections appear on the hub in this order. Drag a section by its handle, or use the arrows, to move it. Add your own at the bottom.
       </p>
       {modules.map((mod, index) => {
         const key = moduleKey(mod);
@@ -214,15 +246,62 @@ export function ModuleComposer({
         const label = labelOf(mod, collections);
         const listed = mod.type === "collection" || (!repeatable && !isSingletonBlockType(fixed) && fixed !== "links");
 
+        const dropHere = dragKey && dragKey !== key && dropAt?.key === key ? dropAt.place : null;
+        const indicator = "2px solid var(--focus-ring)";
+
         return (
-          <Card key={key}>
+          <div
+            key={key}
+            data-section-key={key}
+            onDragOver={(e) => {
+              if (!dragKey || dragKey === key) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              const box = e.currentTarget.getBoundingClientRect();
+              const place = e.clientY < box.top + box.height / 2 ? "before" : "after";
+              if (dropAt?.key !== key || dropAt.place !== place) setDropAt({ key, place });
+            }}
+            onDrop={(e) => {
+              if (!dragKey) return;
+              e.preventDefault();
+              drop();
+            }}
+            style={{
+              opacity: dragKey === key ? 0.5 : 1,
+              // The drop line is a border that is always 2px (transparent when idle), so nothing moves while a drag is under way.
+              borderTop: dropHere === "before" ? indicator : "2px solid transparent",
+              borderBottom: dropHere === "after" ? indicator : "2px solid transparent",
+            }}
+          >
+          <Card>
             <div className="flex items-center justify-between" style={{ gap: "var(--space-3)" }}>
-              <Checkbox
-                label={<span className="body-medium">{label}</span>}
-                hint={describeModule(mod, collections)}
-                checked={mod.enabled}
-                onChange={(e) => update(key, { enabled: e.target.checked })}
-              />
+              <div className="flex items-center" style={{ gap: "var(--space-2)" }}>
+                {mod.type !== "welcome" && (
+                  <span
+                    role="img"
+                    aria-label={`Drag ${label} to move it`}
+                    title="Drag to move"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", key);
+                      const card = e.currentTarget.closest<HTMLElement>("[data-section-key]");
+                      if (card) e.dataTransfer.setDragImage(card, 16, 16);
+                      setDragKey(key);
+                    }}
+                    onDragEnd={endDrag}
+                    style={{ display: "inline-flex", cursor: "grab", color: "var(--ink-subtle)", touchAction: "none" }}
+                  >
+                    <GripVertical size={16} strokeWidth={1.75} />
+                  </span>
+                )}
+                <Checkbox
+                  label={<span className="body-medium">{label}</span>}
+                  hint={describeModule(mod, collections)}
+                  checked={mod.enabled}
+                  onChange={(e) => update(key, { enabled: e.target.checked })}
+                />
+              </div>
               <div className="flex items-center" style={{ gap: "var(--space-1)" }}>
                 {mod.type !== "welcome" && (
                   <>
@@ -475,6 +554,7 @@ export function ModuleComposer({
               </div>
             )}
           </Card>
+          </div>
         );
       })}
 

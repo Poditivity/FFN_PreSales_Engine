@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { BLOCK_TYPES, defaultModule, newRepeatableModule, type HubModule } from "@/lib/hubs/types";
-import { ModuleComposer, normalizeModules } from "./ModuleComposer";
+import { BLOCK_TYPES, defaultModule, moduleKey, newRepeatableModule, type HubModule } from "@/lib/hubs/types";
+import { ModuleComposer, normalizeModules, reorderModules } from "./ModuleComposer";
 
 vi.mock("@/lib/content/collections", () => ({
   listCollectionsWithItems: () =>
@@ -32,6 +32,23 @@ describe("normalizeModules", () => {
   it("slots a missing fixed block in after the one before it in the standard order", () => {
     const withoutMentors = BLOCK_TYPES.filter((t) => t !== "mentors").map((t) => defaultModule(t));
     expect(types(normalizeModules(withoutMentors))).toEqual([...BLOCK_TYPES]);
+  });
+});
+
+describe("reorderModules", () => {
+  const list = BLOCK_TYPES.map((t) => defaultModule(t));
+  const keys = (mods: HubModule[]) => mods.map(moduleKey);
+
+  it("moves a section before or after another", () => {
+    const [a, b, c, d] = keys(list);
+    expect(keys(reorderModules(list, d, b, "before")).slice(0, 4)).toEqual([a, d, b, c]);
+    expect(keys(reorderModules(list, a, c, "after")).slice(0, 4)).toEqual([b, c, a, d]);
+  });
+
+  it("leaves the list alone when dropped on itself or an unknown section", () => {
+    const [a] = keys(list);
+    expect(reorderModules(list, a, a, "before")).toBe(list);
+    expect(reorderModules(list, a, "nope", "before")).toBe(list);
   });
 });
 
@@ -108,6 +125,31 @@ describe("ModuleComposer custom sections", () => {
     expect(removed).toHaveLength(BLOCK_TYPES.length);
 
     expect(screen.queryByRole("button", { name: "Remove Founders" })).not.toBeInTheDocument();
+  });
+
+  it("moves a section when its handle is dragged onto another section", () => {
+    const onChange = vi.fn();
+    const custom = newRepeatableModule("custom", "Our story");
+    const modules = [...normalizeModules([]), custom];
+    render(<ModuleComposer value={modules} onChange={onChange} itemsByType={noItems} />);
+
+    const handle = screen.getByRole("img", { name: "Drag Our story to move it" });
+    const target = document.querySelector<HTMLElement>(`[data-section-key="${moduleKey(modules[2])}"]`)!;
+    const dataTransfer = { setData: () => {}, setDragImage: () => {}, effectAllowed: "", dropEffect: "" };
+    fireEvent.dragStart(handle, { dataTransfer });
+    // jsdom has no layout, so every box is 0 tall and clientY 0 reads as "after".
+    fireEvent.dragOver(target, { dataTransfer, clientY: 0 });
+    fireEvent.drop(target, { dataTransfer });
+
+    const moved = onChange.mock.calls[0][0] as HubModule[];
+    expect(moved.indexOf(moved.find((m) => m.id === custom.id)!)).toBe(3);
+    expect(moved).toHaveLength(modules.length);
+  });
+
+  it("gives the Welcome section no drag handle", () => {
+    render(<ModuleComposer value={[]} onChange={() => {}} itemsByType={noItems} />);
+    expect(screen.queryByRole("img", { name: "Drag Welcome to move it" })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Drag Founders to move it" })).toBeInTheDocument();
   });
 
   it("lists a collection's items for a hand-picked collection section", async () => {
