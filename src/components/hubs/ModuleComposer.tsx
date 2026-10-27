@@ -229,7 +229,7 @@ export function ModuleComposer({
   }
 
   return (
-    <div className="flex flex-col" style={{ gap: "var(--space-3)" }}>
+    <div className="flex flex-col" style={{ gap: "var(--space-4)" }}>
       <p className="body-sm" style={{ color: "var(--ink-muted)", margin: 0 }}>
         Sections appear on the hub in this order. Drag a section by its handle, or use the arrows, to move it. Add your own at the bottom.
       </p>
@@ -275,26 +275,24 @@ export function ModuleComposer({
           >
           <Card>
             <div className="flex items-center justify-between" style={{ gap: "var(--space-3)" }}>
-              <div className="flex items-center" style={{ gap: "var(--space-2)" }}>
-                {mod.type !== "welcome" && (
-                  <span
-                    role="img"
-                    aria-label={`Drag ${label} to move it`}
-                    title="Drag to move"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", key);
-                      const card = e.currentTarget.closest<HTMLElement>("[data-section-key]");
-                      if (card) e.dataTransfer.setDragImage(card, 16, 16);
-                      setDragKey(key);
-                    }}
-                    onDragEnd={endDrag}
-                    style={{ display: "inline-flex", cursor: "grab", color: "var(--ink-subtle)", touchAction: "none" }}
-                  >
-                    <GripVertical size={16} strokeWidth={1.75} />
-                  </span>
-                )}
+              <div className="flex items-center" style={{ gap: "var(--space-4)" }}>
+                <span
+                  role="img"
+                  aria-label={`Drag ${label} to move it`}
+                  title="Drag to move"
+                  className="section-grip"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", key);
+                    const card = e.currentTarget.closest<HTMLElement>("[data-section-key]");
+                    if (card) e.dataTransfer.setDragImage(card, 16, 16);
+                    setDragKey(key);
+                  }}
+                  onDragEnd={endDrag}
+                >
+                  <GripVertical size={18} strokeWidth={1.75} />
+                </span>
                 <Checkbox
                   label={<span className="body-medium">{label}</span>}
                   hint={describeModule(mod, collections)}
@@ -302,7 +300,7 @@ export function ModuleComposer({
                   onChange={(e) => update(key, { enabled: e.target.checked })}
                 />
               </div>
-              <div className="flex items-center" style={{ gap: "var(--space-1)" }}>
+              <div className="flex items-center" style={{ gap: "var(--space-2)" }}>
                 {mod.type !== "welcome" && (
                   <>
                     <Button

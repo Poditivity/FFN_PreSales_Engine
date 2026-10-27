@@ -146,9 +146,9 @@ describe("ModuleComposer custom sections", () => {
     expect(moved).toHaveLength(modules.length);
   });
 
-  it("gives the Welcome section no drag handle", () => {
+  it("gives every section a drag handle, Welcome included", () => {
     render(<ModuleComposer value={[]} onChange={() => {}} itemsByType={noItems} />);
-    expect(screen.queryByRole("img", { name: "Drag Welcome to move it" })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Drag Welcome to move it" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Drag Founders to move it" })).toBeInTheDocument();
   });
 
