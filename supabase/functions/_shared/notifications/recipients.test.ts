@@ -21,6 +21,35 @@ describe("resolveSubmissionContact", () => {
     expect(resolveSubmissionContact({ n: "Asha Rao" }, named).name).toBe("Asha Rao");
   });
 
+  it("does not take a startup's name for the person's, whichever comes first", () => {
+    const form = [
+      { id: "s", label: "Startup name", type: "text" },
+      { id: "n", label: "Your name", type: "text" },
+    ];
+    expect(resolveSubmissionContact({ s: "Acme Labs", n: "Asha Rao" }, form).name).toBe("Asha Rao");
+  });
+
+  it("prefers a Name-type question over a text question labelled like a name", () => {
+    const form = [
+      { id: "t", label: "Preferred name", type: "text" },
+      { id: "n", label: "Applicant", type: "name" },
+    ];
+    expect(resolveSubmissionContact({ t: "Ash", n: "Asha Rao" }, form).name).toBe("Asha Rao");
+  });
+
+  it("leaves the name empty rather than using a company name", () => {
+    const form = [{ id: "c", label: "Company name", type: "text" }];
+    expect(resolveSubmissionContact({ c: "Acme Labs" }, form).name).toBe("");
+  });
+
+  it("skips an unanswered name question", () => {
+    const form = [
+      { id: "a", label: "Full name", type: "text" },
+      { id: "b", label: "Your name", type: "text" },
+    ];
+    expect(resolveSubmissionContact({ a: "", b: "Asha Rao" }, form).name).toBe("Asha Rao");
+  });
+
   it("falls back to a field labelled like a phone or WhatsApp number", () => {
     const labelled = [{ id: "w", label: "WhatsApp number", type: "text" }];
     expect(resolveSubmissionContact({ w: "+91 98765 43210" }, labelled).phone).toBe("+91 98765 43210");
