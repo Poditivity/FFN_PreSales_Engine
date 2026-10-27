@@ -19,6 +19,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { type Notification, notify, resolveSubmissionContact } from "../_shared/notify.ts";
 import { requireStaff } from "../_shared/adminAuth.ts";
+import { flowOrderedFields, type SchemaQuestion } from "../_shared/formSchema.ts";
 import { loadSystemTemplate, renderSystemEmail } from "../_shared/systemEmail.ts";
 
 const corsHeaders = {
@@ -37,24 +38,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-interface SchemaField {
-  id: string;
-  label: string;
-  type: string;
-}
-
-function extractFields(schema: unknown): SchemaField[] {
-  if (!schema || typeof schema !== "object") return [];
-  const s = schema as Record<string, unknown>;
-  const nodes: unknown[] = Array.isArray(s.nodes) ? (s.nodes as unknown[]) : [];
-  return nodes
-    .filter((n) => (n as Record<string, unknown>)?.type === "question")
-    .map((n) => (n as Record<string, unknown>)?.data as Record<string, unknown>)
-    .map((d) => d?.field as Record<string, unknown>)
-    .filter(Boolean) as SchemaField[];
-}
-
-function answersTable(fields: SchemaField[], data: Record<string, unknown>): string {
+function answersTable(fields: SchemaQuestion[], data: Record<string, unknown>): string {
   const rows = fields
     .filter((f) => data[f.id] !== undefined && data[f.id] !== null && data[f.id] !== "")
     .map((f) => {
@@ -197,15 +181,12 @@ Deno.serve(async (req: Request) => {
   const { data: form } = await supabase.from("forms").select("id, title, schema").eq("id", realFormId).maybeSingle();
   if (!form) return json({ error: "Form not found" }, 404);
 
-  const fields = extractFields(form.schema);
+  const fields = flowOrderedFields(form.schema);
   const answers = (submission.data ?? {}) as Record<string, unknown>;
 
   const emailField = fields.find((f) => f.type === "email");
   const submitterEmail = emailField ? String(answers[emailField.id] ?? "").trim() : "";
-  const nameField = fields.find((f) => f.type === "name" || (f.type === "text" && /name/i.test(f.label ?? "")));
-  const submitterName = nameField ? String(answers[nameField.id] ?? "").trim() : "";
-
-  const submitterPhone = resolveSubmissionContact(answers, fields).phone;
+  const { name: submitterName, phone: submitterPhone } = resolveSubmissionContact(answers, fields);
 
   const table = answersTable(fields, answers);
   // Both emails are system templates staff edit under Messaging; without a stored

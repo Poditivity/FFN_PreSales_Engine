@@ -41,9 +41,8 @@ export function resolveSubmissionIdentity(
 ): HubIdentity {
   const emailField = fields.find((f) => f.type === "email");
   const email = emailField ? String(data[emailField.id] ?? "").trim() : "";
-  const nameField = fields.find((f) => f.type === "name" || (f.type === "text" && /name/i.test(f.label ?? "")));
-  const name = nameField ? String(data[nameField.id] ?? "").trim() : "";
-  return { name, email, phone: resolveSubmissionContact(data, fields).phone };
+  const { name, phone } = resolveSubmissionContact(data, fields);
+  return { name, email, phone };
 }
 
 export interface HubIdentity {
