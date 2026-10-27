@@ -538,6 +538,22 @@ body {
   align-items: start;
 }
 .hubform-span { grid-column: 1 / -1; }
+/* The drag handle on a hub section: a roomy target with a divider before the section's name. */
+.section-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: var(--space-8);
+  margin-right: var(--space-2);
+  padding-right: var(--space-4);
+  border-right: 1px solid var(--border);
+  color: var(--ink-subtle);
+  cursor: grab;
+  touch-action: none;
+}
+.section-grip:hover { color: var(--ink); }
+.section-grip:active { cursor: grabbing; }
 .hubform-footer {
   position: sticky;
   bottom: calc(var(--space-6) * -1);
