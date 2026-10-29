@@ -559,7 +559,7 @@ Deno.serve(async (req: Request) => {
     status: responseStatus,
     open_count: responseOpenCount,
     blocks,
-    // Per template. A hub with no template, or a template saved before the setting existed, keeps the bar.
+    // Per template: whether the navigation bar shows its menu items. A hub with no template, or a template saved before the setting existed, shows them.
     show_navbar: template?.show_navbar !== false,
   });
 });

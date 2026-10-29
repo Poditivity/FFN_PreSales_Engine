@@ -222,6 +222,8 @@ export function HubRenderer({ token }: { token: string }) {
       id: sectionIdOf(b),
       label: b.type === "custom" || b.type === "collection" ? b.title || "More" : BLOCK_LABELS[b.type as BlockType],
     }));
+  // A template can turn the menu items off. The bar itself, with the logo and the booking button, stays.
+  const showMenuItems = data.show_navbar !== false;
   const openFounder = founders.find((f) => f.id === founderId) ?? null;
 
   const heading = welcome?.title || (welcome?.lead_name ? `Welcome, ${welcome.lead_name}` : "Welcome");
@@ -234,13 +236,13 @@ export function HubRenderer({ token }: { token: string }) {
 
       {preview && <div className="hub-preview">Preview, not tracked</div>}
 
-      {data.show_navbar !== false && (
-        <header inert={openFounder ? true : undefined} className={`hub-nav${scrolled ? " is-scrolled" : ""}`}>
-          <div className="hub-wrap hub-nav-inner">
-            <a className="hub-brand" href="#top" aria-label="Founders First Network, top of page">
-              <BrandLockup width="calc(var(--space-16) * 2.25)" />
-            </a>
+      <header inert={openFounder ? true : undefined} className={`hub-nav${scrolled ? " is-scrolled" : ""}`}>
+        <div className="hub-wrap hub-nav-inner">
+          <a className="hub-brand" href="#top" aria-label="Founders First Network, top of page">
+            <BrandLockup width="calc(var(--space-16) * 2.25)" />
+          </a>
 
+          {showMenuItems && (
             <nav className="hub-nav-links" aria-label="Sections">
               {navSections.map((section) => (
                 <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined}>
@@ -248,8 +250,10 @@ export function HubRenderer({ token }: { token: string }) {
                 </a>
               ))}
             </nav>
+          )}
 
-            <div className="hub-nav-end">
+          <div className="hub-nav-end">
+            {showMenuItems && (
               <button
                 type="button"
                 className="hub-menu-btn"
@@ -259,32 +263,32 @@ export function HubRenderer({ token }: { token: string }) {
               >
                 Sections <ChevronDown size={15} strokeWidth={1.75} aria-hidden="true" />
               </button>
-              {bookingUrl && (
-                <a
-                  className="hub-btn hub-btn--primary hub-btn--sm hub-nav-cta"
-                  href={bookingUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => track("cta_click", "cta", "booking")}
-                >
-                  {cta?.cta_text || "Book time"}
+            )}
+            {bookingUrl && (
+              <a
+                className="hub-btn hub-btn--primary hub-btn--sm hub-nav-cta"
+                href={bookingUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track("cta_click", "cta", "booking")}
+              >
+                {cta?.cta_text || "Book time"}
+              </a>
+            )}
+          </div>
+        </div>
+        {showMenuItems && menuOpen && (
+          <div id="hub-menu" className="hub-menu">
+            <div className="hub-wrap">
+              {menuSections.map((section) => (
+                <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined} onClick={() => setMenuOpen(false)}>
+                  {section.label}
                 </a>
-              )}
+              ))}
             </div>
           </div>
-          {menuOpen && (
-            <div id="hub-menu" className="hub-menu">
-              <div className="hub-wrap">
-                {menuSections.map((section) => (
-                  <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined} onClick={() => setMenuOpen(false)}>
-                    {section.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </header>
-      )}
+        )}
+      </header>
 
       <main id="top" inert={openFounder ? true : undefined}>
         <div className="hub-hero" id={welcome ? "welcome" : undefined}>

@@ -155,8 +155,8 @@ export function HubTemplatesManager({
       />
       <div style={{ marginBottom: "var(--space-4)" }}>
         <Checkbox
-          label="Show the navigation bar"
-          hint="Turn this off and hubs built from this template open without the bar at the top."
+          label="Show menu items in the navigation bar"
+          hint="Turn this off and hubs built from this template keep the bar with the logo and the booking button, without the section links and the Sections menu."
           checked={showNavbar}
           onChange={(e) => setShowNavbar(e.target.checked)}
         />

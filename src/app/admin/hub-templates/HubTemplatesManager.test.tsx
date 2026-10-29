@@ -30,21 +30,21 @@ beforeEach(() => {
   updateHubTemplate.mockReset();
 });
 
-describe("Show the navigation bar", () => {
-  it("is on for a template that shows the bar", () => {
+describe("Show menu items in the navigation bar", () => {
+  it("is on for a template that shows menu items", () => {
     render(<HubTemplatesManager initialTemplates={[template(true)]} tracks={[track] as never} initialSettings={settings} />);
-    expect(screen.getByLabelText(/Show the navigation bar/)).toBeChecked();
+    expect(screen.getByLabelText(/Show menu items in the navigation bar/)).toBeChecked();
   });
 
-  it("is off for a template that hides it", () => {
+  it("is off for a template that hides them", () => {
     render(<HubTemplatesManager initialTemplates={[template(false)]} tracks={[track] as never} initialSettings={settings} />);
-    expect(screen.getByLabelText(/Show the navigation bar/)).not.toBeChecked();
+    expect(screen.getByLabelText(/Show menu items in the navigation bar/)).not.toBeChecked();
   });
 
   it("saves the choice with the template", async () => {
     updateHubTemplate.mockResolvedValue(template(false));
     render(<HubTemplatesManager initialTemplates={[template(true)]} tracks={[track] as never} initialSettings={settings} />);
-    fireEvent.click(screen.getByLabelText(/Show the navigation bar/));
+    fireEvent.click(screen.getByLabelText(/Show menu items in the navigation bar/));
     const save = screen.getByRole("button", { name: "Save template" });
     await waitFor(() => expect(save).toBeEnabled());
     fireEvent.click(save);

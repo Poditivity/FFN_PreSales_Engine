@@ -209,7 +209,8 @@ export const hubTemplateSchema = z.object({
   track_id: z.string().uuid(),
   name: z.string().min(1),
   modules: z.array(hubModuleSchema),
-  // Whether the public hub page shows its navigation bar. On unless staff turn it off.
+  // Whether the public hub page shows the menu items in its navigation bar (the section
+  // links and the Sections menu). The bar itself always shows. On unless staff turn it off.
   show_navbar: z.boolean().default(true),
   created_at: z.string(),
   updated_at: z.string(),

@@ -162,7 +162,7 @@ export interface HubInfoPayload {
   status: HubStatus;
   open_count: number;
   blocks: HubBlockPayload[];
-  // Optional: an older hub-hydrate does not send it, and the page then keeps the bar.
+  // Whether the navigation bar shows its menu items. Optional: an older hub-hydrate does not send it, and the page then shows them.
   show_navbar?: boolean;
 }
 
