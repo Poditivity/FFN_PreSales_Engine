@@ -59,7 +59,6 @@ export const HUB_CSS = `
 .hub-menu a[aria-current="true"]{background:var(--surface-selected);color:var(--brand)}
 @media (min-width:960px){
   .hub-nav-links{display:flex}
-  .hub-nav-end{margin-left:0}
   .hub-menu-btn{display:none}
   .hub-menu{display:none}
 }
