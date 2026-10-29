@@ -2,7 +2,7 @@
 
 import { Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Input, RowsSkeleton, Select } from "@/components/ffn";
+import { Alert, Button, Card, Checkbox, Input, RowsSkeleton, Select } from "@/components/ffn";
 import { ModuleComposer, normalizeModules, type ItemOption } from "@/components/hubs/ModuleComposer";
 import type { Track } from "@/lib/content/types";
 import { createHubTemplate, deleteHubTemplate, updateHubTemplate } from "@/lib/hubs/templates";
@@ -30,6 +30,7 @@ export function HubTemplatesManager({
   const [templateId, setTemplateId] = useState(initialTemplate?.id ?? "");
   const [name, setName] = useState(initialTemplate?.name ?? "Default");
   const [modules, setModules] = useState<HubModule[]>(normalizeModules(initialTemplate?.modules ?? []));
+  const [showNavbar, setShowNavbar] = useState(initialTemplate?.show_navbar ?? true);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
@@ -43,6 +44,7 @@ export function HubTemplatesManager({
     setTemplateId(template?.id ?? "");
     setName(template?.name ?? "Default");
     setModules(normalizeModules(template?.modules ?? []));
+    setShowNavbar(template?.show_navbar ?? true);
   }
 
   function selectTrack(id: string) {
@@ -65,7 +67,7 @@ export function HubTemplatesManager({
     setError(null);
     setJustSaved(false);
     try {
-      const input = { track_id: trackId, name, modules };
+      const input = { track_id: trackId, name, modules, show_navbar: showNavbar };
       const saved = templateId ? await updateHubTemplate(templateId, input) : await createHubTemplate(input);
       setTemplates((prev) => {
         const exists = prev.some((t) => t.id === saved.id);
@@ -149,8 +151,16 @@ export function HubTemplatesManager({
         required
         value={name}
         onChange={(e) => setName(e.target.value)}
-        style={{ maxWidth: 320, marginBottom: "var(--space-2)" }}
+        style={{ maxWidth: 320, marginBottom: "var(--space-4)" }}
       />
+      <div style={{ marginBottom: "var(--space-4)" }}>
+        <Checkbox
+          label="Show menu items in the navigation bar"
+          hint="Turn this off and hubs built from this template keep the bar with the logo and the booking button, without the section links and the Sections menu."
+          checked={showNavbar}
+          onChange={(e) => setShowNavbar(e.target.checked)}
+        />
+      </div>
       <p className="body-sm" style={{ color: "var(--ink-muted)", marginBottom: "var(--space-6)" }}>
         These blocks build every {trackName} hub. Turn blocks on or off and set how each one pulls content — a hub can
         still customize its own module list after creation.

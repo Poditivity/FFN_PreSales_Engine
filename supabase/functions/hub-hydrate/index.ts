@@ -218,7 +218,7 @@ Deno.serve(async (req: Request) => {
   const [{ data: track }, { data: template }] = await Promise.all([
     admin.from("tracks").select("id, name").eq("id", hub.track_id).maybeSingle(),
     hub.template_id
-      ? admin.from("hub_templates").select("modules").eq("id", hub.template_id).maybeSingle()
+      ? admin.from("hub_templates").select("*").eq("id", hub.template_id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
   if (!track) return json({ error: "Track not found" }, 404);
@@ -559,5 +559,7 @@ Deno.serve(async (req: Request) => {
     status: responseStatus,
     open_count: responseOpenCount,
     blocks,
+    // Per template: whether the navigation bar shows its menu items. A hub with no template, or a template saved before the setting existed, shows them.
+    show_navbar: template?.show_navbar !== false,
   });
 });

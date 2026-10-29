@@ -222,6 +222,8 @@ export function HubRenderer({ token }: { token: string }) {
       id: sectionIdOf(b),
       label: b.type === "custom" || b.type === "collection" ? b.title || "More" : BLOCK_LABELS[b.type as BlockType],
     }));
+  // A template can turn the menu items off. The bar itself, with the logo and the booking button, stays.
+  const showMenuItems = data.show_navbar !== false;
   const openFounder = founders.find((f) => f.id === founderId) ?? null;
 
   const heading = welcome?.title || (welcome?.lead_name ? `Welcome, ${welcome.lead_name}` : "Welcome");
@@ -240,24 +242,28 @@ export function HubRenderer({ token }: { token: string }) {
             <BrandLockup width="calc(var(--space-16) * 2.25)" />
           </a>
 
-          <nav className="hub-nav-links" aria-label="Sections">
-            {navSections.map((section) => (
-              <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined}>
-                {section.label}
-              </a>
-            ))}
-          </nav>
+          {showMenuItems && (
+            <nav className="hub-nav-links" aria-label="Sections">
+              {navSections.map((section) => (
+                <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined}>
+                  {section.label}
+                </a>
+              ))}
+            </nav>
+          )}
 
           <div className="hub-nav-end">
-            <button
-              type="button"
-              className="hub-menu-btn"
-              aria-expanded={menuOpen}
-              aria-controls="hub-menu"
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              Sections <ChevronDown size={15} strokeWidth={1.75} aria-hidden="true" />
-            </button>
+            {showMenuItems && (
+              <button
+                type="button"
+                className="hub-menu-btn"
+                aria-expanded={menuOpen}
+                aria-controls="hub-menu"
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                Sections <ChevronDown size={15} strokeWidth={1.75} aria-hidden="true" />
+              </button>
+            )}
             {bookingUrl && (
               <a
                 className="hub-btn hub-btn--primary hub-btn--sm hub-nav-cta"
@@ -271,7 +277,7 @@ export function HubRenderer({ token }: { token: string }) {
             )}
           </div>
         </div>
-        {menuOpen && (
+        {showMenuItems && menuOpen && (
           <div id="hub-menu" className="hub-menu">
             <div className="hub-wrap">
               {menuSections.map((section) => (
