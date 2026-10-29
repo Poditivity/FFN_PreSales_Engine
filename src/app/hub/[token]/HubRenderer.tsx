@@ -234,55 +234,57 @@ export function HubRenderer({ token }: { token: string }) {
 
       {preview && <div className="hub-preview">Preview, not tracked</div>}
 
-      <header inert={openFounder ? true : undefined} className={`hub-nav${scrolled ? " is-scrolled" : ""}`}>
-        <div className="hub-wrap hub-nav-inner">
-          <a className="hub-brand" href="#top" aria-label="Founders First Network, top of page">
-            <BrandLockup width="calc(var(--space-16) * 2.25)" />
-          </a>
+      {data.show_navbar !== false && (
+        <header inert={openFounder ? true : undefined} className={`hub-nav${scrolled ? " is-scrolled" : ""}`}>
+          <div className="hub-wrap hub-nav-inner">
+            <a className="hub-brand" href="#top" aria-label="Founders First Network, top of page">
+              <BrandLockup width="calc(var(--space-16) * 2.25)" />
+            </a>
 
-          <nav className="hub-nav-links" aria-label="Sections">
-            {navSections.map((section) => (
-              <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined}>
-                {section.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="hub-nav-end">
-            <button
-              type="button"
-              className="hub-menu-btn"
-              aria-expanded={menuOpen}
-              aria-controls="hub-menu"
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              Sections <ChevronDown size={15} strokeWidth={1.75} aria-hidden="true" />
-            </button>
-            {bookingUrl && (
-              <a
-                className="hub-btn hub-btn--primary hub-btn--sm hub-nav-cta"
-                href={bookingUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => track("cta_click", "cta", "booking")}
-              >
-                {cta?.cta_text || "Book time"}
-              </a>
-            )}
-          </div>
-        </div>
-        {menuOpen && (
-          <div id="hub-menu" className="hub-menu">
-            <div className="hub-wrap">
-              {menuSections.map((section) => (
-                <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined} onClick={() => setMenuOpen(false)}>
+            <nav className="hub-nav-links" aria-label="Sections">
+              {navSections.map((section) => (
+                <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined}>
                   {section.label}
                 </a>
               ))}
+            </nav>
+
+            <div className="hub-nav-end">
+              <button
+                type="button"
+                className="hub-menu-btn"
+                aria-expanded={menuOpen}
+                aria-controls="hub-menu"
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                Sections <ChevronDown size={15} strokeWidth={1.75} aria-hidden="true" />
+              </button>
+              {bookingUrl && (
+                <a
+                  className="hub-btn hub-btn--primary hub-btn--sm hub-nav-cta"
+                  href={bookingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => track("cta_click", "cta", "booking")}
+                >
+                  {cta?.cta_text || "Book time"}
+                </a>
+              )}
             </div>
           </div>
-        )}
-      </header>
+          {menuOpen && (
+            <div id="hub-menu" className="hub-menu">
+              <div className="hub-wrap">
+                {menuSections.map((section) => (
+                  <a key={section.id} href={`#${section.id}`} aria-current={active === section.id ? "true" : undefined} onClick={() => setMenuOpen(false)}>
+                    {section.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </header>
+      )}
 
       <main id="top" inert={openFounder ? true : undefined}>
         <div className="hub-hero" id={welcome ? "welcome" : undefined}>

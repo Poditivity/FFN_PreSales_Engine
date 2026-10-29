@@ -162,6 +162,8 @@ export interface HubInfoPayload {
   status: HubStatus;
   open_count: number;
   blocks: HubBlockPayload[];
+  // Optional: an older hub-hydrate does not send it, and the page then keeps the bar.
+  show_navbar?: boolean;
 }
 
 export async function fetchHubInfo(token: string, preview: boolean): Promise<HubInfoPayload> {

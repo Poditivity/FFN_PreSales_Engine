@@ -23,6 +23,7 @@ export interface HubTemplateInput {
   track_id: string;
   name: string;
   modules: HubModule[];
+  show_navbar: boolean;
 }
 
 export async function createHubTemplate(input: HubTemplateInput): Promise<HubTemplate> {
